@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
+import { extractText } from "unpdf";
 import { parseCVWithDeepSeek, hasDeepSeek } from "@/lib/ai/deepseek";
 import { parseCVHeuristic } from "@/lib/atlas/mock";
 
@@ -20,12 +20,11 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer();
         if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
           const uint8 = new Uint8Array(bytes);
-          const parser = new PDFParse({ data: uint8 });
-          try {
-            const textResult = await parser.getText();
-            text = textResult.text || "";
-          } finally {
-            await parser.destroy();
+          const result = await extractText(uint8);
+          if (Array.isArray(result.text)) {
+            text = result.text.join("\n\n");
+          } else {
+            text = String(result.text || "");
           }
         } else {
           text = Buffer.from(bytes).toString("utf-8");
@@ -38,9 +37,9 @@ export async function POST(request: Request) {
       text = body.raw || "";
     }
 
-    if (!text || text.trim().length < 20) {
+    if (!text || text.trim().length < 15) {
       return NextResponse.json(
-        { error: "No se pudo extraer texto del documento o el archivo está vacío." },
+        { error: "No se pudo extraer texto del documento. Asegúrate de que el PDF contenga texto seleccionable." },
         { status: 400 }
       );
     }
