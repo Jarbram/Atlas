@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   GraduationCap,
@@ -20,8 +21,6 @@ import {
   FileUp,
   RefreshCw,
   Sparkles,
-  FileText,
-  AlertCircle,
   RotateCcw,
 } from "lucide-react";
 import { Profile, newId, isProfileEmpty } from "@/lib/atlas/mock";
@@ -32,6 +31,7 @@ const inputCls =
   "w-full rounded-lg well px-2.5 py-1.5 text-[13px] text-ink-hi outline-none focus:border-brass/50";
 
 export default function PerfilPage() {
+  const router = useRouter();
   const { profile, setProfile, resetProfile, parseAndSetProfile } = useDeck();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
@@ -67,11 +67,17 @@ export default function PerfilPage() {
     setUploadStep(1);
 
     const stepTimer = setTimeout(() => setUploadStep(2), 1200);
+    const wasEmpty = isEmpty;
 
     try {
       const parsed = await parseAndSetProfile(file);
       setDraft(structuredClone(parsed));
       toast(`¡Perfil de ${parsed.name || "candidato"} cargado exitosamente!`, "ok");
+      if (wasEmpty) {
+        setTimeout(() => {
+          router.push("/adaptar");
+        }, 1200);
+      }
     } catch (err: any) {
       console.error("Error al procesar el CV:", err);
       toast(err.message || "Error al procesar el archivo PDF");
@@ -86,7 +92,7 @@ export default function PerfilPage() {
   const p = editing ? draft : profile;
   const set = (patch: Partial<Profile>) => setDraft({ ...draft, ...patch });
 
-  // ─── Onboarding / Empty state view ─────────────────────────────────────────
+  // ─── Onboarding / Empty state view (First time / New account) ───────────────
   if (isEmpty && !editing) {
     return (
       <div className="mx-auto w-full max-w-[1000px] px-4 py-12 sm:px-6 lg:px-10">
@@ -95,11 +101,11 @@ export default function PerfilPage() {
             <Sparkles className="h-7 w-7 text-brass" />
           </div>
           <h1 className="mt-4 font-display text-[32px] font-semibold tracking-tight text-ink-hi sm:text-[40px]">
-            Configura tu perfil profesional
+            Carga tu Curriculum Vitae
           </h1>
           <p className="mx-auto mt-2 max-w-xl text-[14px] leading-relaxed text-ink-mid">
-            Carga tu Curriculum Vitae en formato PDF para que nuestro motor de Inteligencia Artificial
-            extraiga y estructure automáticamente tu experiencia, tecnologías, educación e información.
+            Para comenzar, sube tu CV en formato PDF. Nuestro motor de Inteligencia Artificial
+            extraerá y organizará tu experiencia laboral, habilidades técnicas y educación para adaptar tus postulaciones.
           </p>
         </div>
 
@@ -135,7 +141,7 @@ export default function PerfilPage() {
           />
 
           {uploading ? (
-            <div className="space-y-5 py-4">
+            <div className="space-y-5 py-6">
               <RefreshCw className="mx-auto h-10 w-10 animate-spin text-brass" />
               <div>
                 <p className="font-display text-[18px] font-semibold text-ink-hi">
@@ -173,7 +179,7 @@ export default function PerfilPage() {
 
         {/* Alternative: manual start */}
         <div className="mt-6 flex items-center justify-center gap-3 text-center">
-          <span className="text-[13px] text-ink-lo">¿No tienes tu CV a la mano?</span>
+          <span className="text-[13px] text-ink-lo">¿Prefieres no subir archivo?</span>
           <button
             onClick={() => {
               setDraft(structuredClone(profile));
@@ -181,14 +187,14 @@ export default function PerfilPage() {
             }}
             className="text-[13px] font-medium text-brass hover:underline"
           >
-            Completar manualmente →
+            Completar perfil manualmente →
           </button>
         </div>
       </div>
     );
   }
 
-  // ─── Profile Details View ──────────────────────────────────────────────────
+  // ─── Profile Details View (Already configured profile) ──────────────────────
   return (
     <div className={`mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10 ${editing ? "pb-28" : ""}`}>
       <input
