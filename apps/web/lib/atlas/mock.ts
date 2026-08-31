@@ -68,6 +68,12 @@ export interface LanguageItem {
   name: string;
   level: string;
 }
+/** A skill the user added from a vacancy gap, with a note on how they used it. */
+export interface AddedSkill {
+  id: string;
+  name: string;
+  note: string;
+}
 export interface Profile {
   name: string;
   title: string;
@@ -80,6 +86,7 @@ export interface Profile {
   experiences: ProfileExperience[];
   education: EducationItem[];
   languages: LanguageItem[];
+  addedSkills: AddedSkill[];
 }
 
 export const EMPTY_PROFILE: Profile = {
@@ -94,12 +101,16 @@ export const EMPTY_PROFILE: Profile = {
   experiences: [],
   education: [],
   languages: [],
+  addedSkills: [],
 };
 
 export const isProfileEmpty = (p?: Profile | null) =>
   !p || (!p.experiences?.length && !p.skills?.length && !p.summary?.trim());
 
-export const flatSkills = (p: Profile) => p.skills.flatMap((g) => g.items);
+export const flatSkills = (p: Profile) => [
+  ...p.skills.flatMap((g) => g.items),
+  ...(p.addedSkills ?? []).map((s) => s.name),
+];
 
 export const SEED_PROFILE: Profile = {
   name: "Abraham Moisés Huacchillo Castillo",
@@ -217,6 +228,7 @@ export const SEED_PROFILE: Profile = {
     { id: "lg-1", name: "Español", level: "Nativo (C2)" },
     { id: "lg-2", name: "Inglés", level: "Avanzado (B2+)" },
   ],
+  addedSkills: [],
 };
 
 // ─── Adaptation engine (stubbed) ───────────────────────────────────────────
@@ -393,6 +405,7 @@ export function parseCVHeuristic(text: string): Profile {
     experiences: [],
     education: [],
     languages: [{ id: "lg-1", name: "Español", level: "Nativo" }],
+    addedSkills: [],
   };
 }
 

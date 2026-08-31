@@ -193,5 +193,6 @@ export async function parseCVWithDeepSeek(rawCV: string): Promise<Profile> {
     experiences,
     education,
     languages,
+    addedSkills: [],
   };
 }

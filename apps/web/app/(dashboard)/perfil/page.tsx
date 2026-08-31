@@ -493,6 +493,50 @@ export default function PerfilPage() {
               )}
             </div>
           </Card>
+
+          <Card
+            icon={Sparkles}
+            title="Habilidades añadidas"
+            action={
+              editing && (
+                <AddBtn
+                  onClick={() =>
+                    set({ addedSkills: [...draft.addedSkills, { id: newId("as"), name: "", note: "" }] })
+                  }
+                />
+              )
+            }
+          >
+            <div className="space-y-3">
+              {p.addedSkills.map((a, i) =>
+                editing ? (
+                  <div key={a.id} className="well space-y-2 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                      <input className={inputCls} value={a.name} placeholder="Habilidad" onChange={(ev) => patchArr(draft, set, "addedSkills", i, { name: ev.target.value })} />
+                      <RmBtn onClick={() => set({ addedSkills: draft.addedSkills.filter((x) => x.id !== a.id) })} />
+                    </div>
+                    <textarea
+                      className={`${inputCls} resize-y leading-relaxed`}
+                      rows={3}
+                      value={a.note}
+                      placeholder="¿Cómo la usaste? Proyecto, resultado, contexto…"
+                      onChange={(ev) => patchArr(draft, set, "addedSkills", i, { note: ev.target.value })}
+                    />
+                  </div>
+                ) : (
+                  <div key={a.id}>
+                    <p className="text-[14px] font-medium leading-snug text-ink-hi">{a.name}</p>
+                    {a.note && <p className="mt-0.5 text-[13px] leading-relaxed text-ink-mid">{a.note}</p>}
+                  </div>
+                ),
+              )}
+              {p.addedSkills.length === 0 && (
+                <p className="text-[13px] text-ink-lo">
+                  Al adaptar una vacante puedes añadir aquí las habilidades que pide y describir cómo las usaste.
+                </p>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
 
@@ -524,7 +568,7 @@ export default function PerfilPage() {
   );
 }
 
-function patchArr<K extends "skills" | "experiences" | "education" | "languages">(
+function patchArr<K extends "skills" | "experiences" | "education" | "languages" | "addedSkills">(
   draft: Profile,
   set: (patch: Partial<Profile>) => void,
   key: K,

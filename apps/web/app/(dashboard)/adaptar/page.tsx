@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   RefreshCw,
   Copy,
+  Download,
   Trash2,
   Check,
   ArrowLeft,
@@ -22,7 +23,7 @@ import {
   FileEdit,
   Sparkles,
 } from "lucide-react";
-import { Profile, Vacancy, calceScore, isProfileEmpty } from "@/lib/atlas/mock";
+import { Profile, Vacancy, calceScore, isProfileEmpty, newId } from "@/lib/atlas/mock";
 import { useDeck, useToast } from "@/lib/atlas/store";
 import { Eyebrow, StatusBadge, PageHeader, CalceGauge } from "@/components/atlas/bits";
 
@@ -334,15 +335,46 @@ export default function AdaptarPage() {
 }
 
 function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
-  const { updateVacancy, markSent } = useDeck();
+  const { updateVacancy, markSent, setProfile } = useDeck();
   const toast = useToast();
   const exps = useMemo(() => pickedExperiences(profile, vacancy), [profile, vacancy]);
   const calce = useMemo(() => calceScore(vacancy), [vacancy]);
   const [showRaw, setShowRaw] = useState(false);
+  const [gapDraft, setGapDraft] = useState<{ name: string; note: string } | null>(null);
 
   const copy = (text: string, label: string) => {
     navigator.clipboard?.writeText(text);
     toast(`${label} copiado`, "ok");
+  };
+
+  const downloadPdf = async () => {
+    try {
+      const { downloadCvPdf } = await import("@/lib/atlas/cv-pdf");
+      await downloadCvPdf(
+        `CV - ${profile.name || "Candidato"} - ${vacancy.company}`,
+        cvPlainText(profile, vacancy),
+      );
+    } catch {
+      toast("No se pudo generar el PDF");
+    }
+  };
+
+  const saveGap = () => {
+    if (!gapDraft) return;
+    const name = gapDraft.name;
+    setProfile({
+      ...profile,
+      addedSkills: [
+        ...(profile.addedSkills ?? []),
+        { id: newId("as"), name, note: gapDraft.note.trim() },
+      ],
+    });
+    updateVacancy(vacancy.id, {
+      gaps: vacancy.gaps.filter((x) => x !== name),
+      matched: [...vacancy.matched, name],
+    });
+    setGapDraft(null);
+    toast(`${name} agregada a tu información`, "ok");
   };
 
   return (
@@ -420,25 +452,60 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
           <div className="flex flex-wrap gap-1.5">
             {vacancy.gaps.length ? (
               vacancy.gaps.map((s) => (
-                <span
+                <button
                   key={s}
-                  className="rounded-md border border-caution/30 bg-caution/12 px-2.5 py-1 font-mono text-[12px] text-caution"
+                  onClick={() => setGapDraft({ name: s, note: "" })}
+                  title="Agregar a mi información"
+                  className={`rounded-md border px-2.5 py-1 font-mono text-[12px] transition-colors ${
+                    gapDraft?.name === s
+                      ? "border-brass bg-brass/15 text-brass-soft"
+                      : "border-caution/30 bg-caution/12 text-caution hover:bg-caution/20"
+                  }`}
                 >
-                  {s}
-                </span>
+                  {s} +
+                </button>
               ))
             ) : (
               <span className="text-[12px] text-ink-lo">Ningún gap evidente</span>
             )}
           </div>
-          {vacancy.gaps.length > 0 && (
-            <Link
-              href="/perfil"
-              className="mt-2.5 inline-flex items-center gap-1 text-[12px] text-brass-soft hover:underline"
-            >
-              Añadir a mi información <ArrowRight className="h-3 w-3" />
-            </Link>
+
+          {gapDraft && (
+            <div className="well mt-3 space-y-2 rounded-lg p-3">
+              <p className="text-[12px] font-medium text-ink-hi">
+                Agregar <span className="font-mono text-brass-soft">{gapDraft.name}</span> a tu información
+              </p>
+              <textarea
+                autoFocus
+                value={gapDraft.note}
+                onChange={(e) => setGapDraft({ ...gapDraft, note: e.target.value })}
+                rows={3}
+                placeholder="¿Cómo la usaste? Proyecto, resultado, contexto…"
+                className="w-full resize-y rounded-md bg-transparent p-2 text-[12px] leading-relaxed text-ink-hi outline-none ring-1 ring-[rgba(255,235,190,0.1)] focus:ring-brass/50"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={saveGap}
+                  className="rounded-full bg-brass px-3 py-1.5 text-[12px] font-semibold text-[#1a1305] hover:bg-brass-soft"
+                >
+                  Guardar
+                </button>
+                <button
+                  onClick={() => setGapDraft(null)}
+                  className="text-[12px] text-ink-lo hover:text-ink-mid"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           )}
+
+          <Link
+            href="/perfil"
+            className="mt-2.5 inline-flex items-center gap-1 text-[12px] text-brass-soft hover:underline"
+          >
+            Ver mi información <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
       </div>
 
@@ -453,10 +520,10 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
               </span>
             </span>
             <button
-              onClick={() => copy(cvPlainText(profile, vacancy), "CV")}
+              onClick={downloadPdf}
               className="well card-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-ink-mid hover:text-ink-hi"
             >
-              <Copy className="h-3 w-3" /> Copiar CV
+              <Download className="h-3 w-3" /> Descargar CV en PDF
             </button>
           </div>
           <div className="space-y-4 rounded-lg bg-[#FBFAF6] p-6 font-serif text-black shadow-[0_2px_10px_rgba(0,0,0,0.4),0_36px_70px_-28px_rgba(0,0,0,0.85)] ring-1 ring-black/5 sm:p-8">

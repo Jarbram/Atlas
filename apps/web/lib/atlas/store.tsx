@@ -147,7 +147,7 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
       throw new Error("No se pudo estructurar el perfil del CV");
     }
 
-    const parsedProfile: Profile = data.profile;
+    const parsedProfile: Profile = { ...EMPTY_PROFILE, ...data.profile };
     setState((s) => ({ ...s, profile: parsedProfile }));
     return parsedProfile;
   }, []);
