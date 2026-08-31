@@ -41,14 +41,24 @@ function pickedExperiences(p: Profile, v: Vacancy) {
   return chosen.length ? chosen : (p.experiences || []).slice(0, 3);
 }
 
+/** Added skills that this vacancy asks for and that carry a "how I used it" note. */
+function relevantAddedSkills(p: Profile, v: Vacancy) {
+  const wanted = new Set(v.matched.map((s) => s.toLowerCase()));
+  return (p.addedSkills || []).filter(
+    (s) => wanted.has(s.name.toLowerCase()) && s.note.trim(),
+  );
+}
+
 function cvPlainText(p: Profile, v: Vacancy) {
   const exps = pickedExperiences(p, v);
+  const added = relevantAddedSkills(p, v);
   return [
     (p.name || "CANDIDATO").toUpperCase(),
     [p.location, p.phone, p.email, ...p.links].filter(Boolean).join(" · "),
     "",
     "RESUMEN PROFESIONAL",
     `${p.summary} ${v.summaryLine}`.trim(),
+    ...(v.matched.length ? ["", "COMPETENCIAS CLAVE", v.matched.join(" · ")] : []),
     "",
     "EXPERIENCIA",
     ...exps.flatMap((e) => [
@@ -56,6 +66,9 @@ function cvPlainText(p: Profile, v: Vacancy) {
       ...e.bullets.map((b) => `• ${b}`),
       "",
     ]),
+    ...(added.length
+      ? ["EXPERIENCIA COMPLEMENTARIA", ...added.map((s) => `• ${s.name}: ${s.note}`), ""]
+      : []),
     "EDUCACIÓN Y CERTIFICACIONES",
     ...(p.education || []).map((e) => `${e.title} — ${e.org} (${e.period})`),
     "",
@@ -338,9 +351,11 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
   const { updateVacancy, markSent, setProfile } = useDeck();
   const toast = useToast();
   const exps = useMemo(() => pickedExperiences(profile, vacancy), [profile, vacancy]);
+  const added = useMemo(() => relevantAddedSkills(profile, vacancy), [profile, vacancy]);
   const calce = useMemo(() => calceScore(vacancy), [vacancy]);
   const [showRaw, setShowRaw] = useState(false);
   const [gapDraft, setGapDraft] = useState<{ name: string; note: string } | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const copy = (text: string, label: string) => {
     navigator.clipboard?.writeText(text);
@@ -348,14 +363,26 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
   };
 
   const downloadPdf = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    const name = `CV - ${profile.name || "Candidato"} - ${vacancy.company}`;
+    const body = cvPlainText(profile, vacancy);
     try {
       const { downloadCvPdf } = await import("@/lib/atlas/cv-pdf");
-      await downloadCvPdf(
-        `CV - ${profile.name || "Candidato"} - ${vacancy.company}`,
-        cvPlainText(profile, vacancy),
-      );
-    } catch {
-      toast("No se pudo generar el PDF");
+      await downloadCvPdf(name, body);
+      toast("CV descargado", "ok");
+    } catch (err) {
+      console.error("[cv-pdf] generation failed, falling back to .txt:", err);
+      const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("PDF no disponible — descargado como texto");
+    } finally {
+      setPdfBusy(false);
     }
   };
 
@@ -521,9 +548,15 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
             </span>
             <button
               onClick={downloadPdf}
-              className="well card-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-ink-mid hover:text-ink-hi"
+              disabled={pdfBusy}
+              className="well card-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-ink-mid hover:text-ink-hi disabled:opacity-60"
             >
-              <Download className="h-3 w-3" /> Descargar CV en PDF
+              {pdfBusy ? (
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              ) : (
+                <Download className="h-3 w-3" />
+              )}
+              {pdfBusy ? "Generando…" : "Descargar CV en PDF"}
             </button>
           </div>
           <div className="space-y-4 rounded-lg bg-[#FBFAF6] p-6 font-serif text-black shadow-[0_2px_10px_rgba(0,0,0,0.4),0_36px_70px_-28px_rgba(0,0,0,0.85)] ring-1 ring-black/5 sm:p-8">
@@ -543,6 +576,16 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
                 {profile.summary} <em>{vacancy.summaryLine}</em>
               </p>
             </div>
+            {vacancy.matched.length > 0 && (
+              <div>
+                <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
+                  Competencias clave
+                </h2>
+                <p className="mt-1 text-[12px] leading-relaxed text-gray-800">
+                  {vacancy.matched.join(" · ")}
+                </p>
+              </div>
+            )}
             <div>
               <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
                 Experiencia
@@ -565,6 +608,20 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
                 ))}
               </div>
             </div>
+            {added.length > 0 && (
+              <div>
+                <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
+                  Experiencia complementaria
+                </h2>
+                <ul className="ml-4 mt-2 list-disc space-y-1 text-[12px] text-gray-800">
+                  {added.map((s) => (
+                    <li key={s.id}>
+                      <span className="font-bold">{s.name}:</span> {s.note}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div>
               <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
                 Educación e idiomas
