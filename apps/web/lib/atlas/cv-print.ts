@@ -33,6 +33,11 @@ export function printCvPdf(filename: string, text: string) {
       parts.push(`<h2>${esc(t)}</h2>`);
       continue;
     }
+    const m = t.match(/^(.+ — .+?)\s*\(([^)]+)\)\s*$/);
+    if (m) {
+      parts.push(`<p class='role'><b>${esc(m[1])}</b> <i>(${esc(m[2])})</i></p>`);
+      continue;
+    }
     parts.push(`<p>${esc(t)}</p>`);
   }
 
@@ -40,11 +45,12 @@ export function printCvPdf(filename: string, text: string) {
 <style>
   @page { size: A4; margin: 18mm; }
   html, body { margin: 0; }
-  body { font: 12px/1.55 Georgia, "Times New Roman", serif; color: #111; }
+  body { font: 12px/1.55 Georgia, "Times New Roman", serif; color: #141414; }
   h1 { font-size: 19px; text-align: center; text-transform: uppercase; letter-spacing: .6px; margin: 0 0 3px; }
-  p.meta { text-align: center; font: 10px/1.4 Arial, sans-serif; color: #444; margin: 0 0 10px; }
-  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 16px 0 5px; }
+  p.meta { text-align: center; font: 10px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #555; margin: 0 0 12px; }
+  h2 { font: bold 11px/1.3 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; text-transform: uppercase; letter-spacing: .8px; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 16px 0 5px; }
   p { margin: 2px 0; }
+  p.role { margin: 5px 0 1px; }
   p.b { padding-left: 15px; text-indent: -10px; }
   p.b::before { content: "•  "; }
   .sp { height: 7px; }
