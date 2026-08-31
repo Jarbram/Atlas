@@ -21,10 +21,21 @@ Devuelves SOLO un objeto JSON con esta forma exacta:
   "matched": string[],          // tecnologías/skills que la vacante pide y que YA están en el perfil
   "gaps": string[],             // tecnologías/skills que la vacante pide y NO están en el perfil. NO inventes. Si no hay, [].
   "experienceIds": string[],    // ids de perfil.experiences a destacar, más relevante primero, máximo 4
+  "tailoredExperiences": [      // para CADA id de experienceIds, sus bullets reescritos
+    {
+      "id": string,             // el id de la experiencia del perfil
+      "bullets": string[]       // 3-5 bullets DETALLADOS en español: acción + herramientas + impacto/cifra,
+                                // orientados a esta vacante. Reescribe y expande los bullets originales del
+                                // perfil; NO inventes cifras, clientes, fechas ni logros que no estén ahí.
+    }
+  ],
   "summaryLine": string,        // UNA frase en español para añadir al resumen, a medida de esta vacante
   "message": string             // mensaje breve al reclutador en español, primera persona, 110-160 palabras,
                                 // usando logros REALES del perfil. Sin inventar datos.
 }
+Si el PERFIL trae "addedSkills", son habilidades REALES que el candidato añadió con una nota de cómo las usó:
+trátalas como parte del perfil (pueden ir en "matched") e incorpora esa nota al "summaryLine", al "message"
+y a los "tailoredExperiences" de la experiencia donde aplique.
 No agregues texto fuera del JSON.`;
 
 export async function adaptWithDeepSeek(raw: string, profile: Profile): Promise<Adaptation> {
@@ -43,6 +54,7 @@ export async function adaptWithDeepSeek(raw: string, profile: Profile): Promise<
           title: profile.title,
           summary: profile.summary,
           skills: flatSkills(profile),
+          addedSkills: (profile.addedSkills || []).map((s) => ({ name: s.name, note: s.note })),
           experiences: profile.experiences.map((e) => ({
             id: e.id,
             role: e.role,
@@ -66,14 +78,28 @@ export async function adaptWithDeepSeek(raw: string, profile: Profile): Promise<
   const asArr = (v: unknown) =>
     Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, 24) : [];
 
+  const finalIds = experienceIds.length
+    ? experienceIds.slice(0, 4)
+    : profile.experiences.slice(0, 3).map((e) => e.id);
+
+  const tailoredExperiences = (Array.isArray(parsed.tailoredExperiences) ? parsed.tailoredExperiences : [])
+    .filter((t: any) => t && typeof t.id === "string" && finalIds.includes(t.id))
+    .map((t: any) => ({
+      id: t.id as string,
+      bullets: (Array.isArray(t.bullets) ? t.bullets : [])
+        .map((b: any) => String(b).trim().slice(0, 400))
+        .filter(Boolean)
+        .slice(0, 6),
+    }))
+    .filter((t: { bullets: string[] }) => t.bullets.length > 0);
+
   return {
     company: String(parsed.company || "").trim() || "Empresa por confirmar",
     title: String(parsed.title || "").trim() || "Puesto por confirmar",
     matched: asArr(parsed.matched),
     gaps: asArr(parsed.gaps),
-    experienceIds: experienceIds.length
-      ? experienceIds.slice(0, 4)
-      : profile.experiences.slice(0, 3).map((e) => e.id),
+    experienceIds: finalIds,
+    tailoredExperiences,
     summaryLine: String(parsed.summaryLine || "").trim(),
     message: String(parsed.message || "").trim(),
   };

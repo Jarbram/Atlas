@@ -53,12 +53,29 @@ interface DeckValue extends Persisted {
   hydrated: boolean;
   get: (id: string | null | undefined) => Vacancy | undefined;
   adaptFromRaw: (raw: string) => Promise<Vacancy>;
+  /** Re-run the AI adaptation for an existing vacancy (e.g. after adding a gap skill). */
+  readaptVacancy: (id: string, profileOverride?: Profile) => Promise<void>;
   updateVacancy: (id: string, patch: Partial<Vacancy>) => void;
   markSent: (id: string) => void;
   removeVacancy: (id: string) => void;
   setProfile: (profile: Profile) => void;
   resetProfile: () => void;
   parseAndSetProfile: (fileOrText: File | string) => Promise<Profile>;
+}
+
+/** Call the adapt API, falling back to the local heuristic if it fails. */
+async function runAdapt(raw: string, profile: Profile): Promise<ReturnType<typeof adaptCV>> {
+  try {
+    const res = await fetch("/api/adapt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ raw, profile }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    return await res.json();
+  } catch {
+    return adaptCV(raw, profile);
+  }
 }
 
 const DeckCtx = createContext<DeckValue | null>(null);
@@ -164,18 +181,7 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
       resetProfile,
       parseAndSetProfile,
       adaptFromRaw: async (raw: string) => {
-        let a: ReturnType<typeof adaptCV>;
-        try {
-          const res = await fetch("/api/adapt", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ raw, profile: state.profile }),
-          });
-          if (!res.ok) throw new Error(String(res.status));
-          a = await res.json();
-        } catch {
-          a = adaptCV(raw, state.profile);
-        }
+        const a = await runAdapt(raw, state.profile);
         const v: Vacancy = {
           id: newId("vac"),
           raw: raw.trim(),
@@ -185,6 +191,28 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
         };
         setState((s) => ({ ...s, vacancies: [v, ...s.vacancies] }));
         return v;
+      },
+      readaptVacancy: async (id: string, profileOverride?: Profile) => {
+        const target = state.vacancies.find((v) => v.id === id);
+        if (!target) return;
+        const a = await runAdapt(target.raw, profileOverride ?? state.profile);
+        // Keep vacancy identity/status; refresh only what the adaptation produces.
+        setState((s) => ({
+          ...s,
+          vacancies: s.vacancies.map((v) =>
+            v.id === id
+              ? {
+                  ...v,
+                  matched: a.matched,
+                  gaps: a.gaps,
+                  experienceIds: a.experienceIds,
+                  tailoredExperiences: a.tailoredExperiences,
+                  summaryLine: a.summaryLine,
+                  message: a.message,
+                }
+              : v,
+          ),
+        }));
       },
       markSent: (id: string) =>
         updateVacancy(id, { status: "postulada", sentAt: new Date().toISOString() }),

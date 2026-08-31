@@ -38,6 +38,8 @@ export interface Vacancy {
   message: string;
   summaryLine: string;
   experienceIds: string[];
+  /** AI-rewritten, detailed bullets per highlighted experience id. Empty = use profile bullets. */
+  tailoredExperiences: { id: string; bullets: string[] }[];
   matched: string[];
   gaps: string[];
 }
@@ -374,6 +376,7 @@ export function adaptCV(raw: string, p: Profile) {
     matched,
     gaps,
     experienceIds,
+    tailoredExperiences: [] as { id: string; bullets: string[] }[],
     summaryLine,
     message: buildMessage(p, company, title, matched),
   };

@@ -41,17 +41,17 @@ function pickedExperiences(p: Profile, v: Vacancy) {
   return chosen.length ? chosen : (p.experiences || []).slice(0, 3);
 }
 
-/** Added skills that this vacancy asks for and that carry a "how I used it" note. */
-function relevantAddedSkills(p: Profile, v: Vacancy) {
-  const wanted = new Set(v.matched.map((s) => s.toLowerCase()));
-  return (p.addedSkills || []).filter(
-    (s) => wanted.has(s.name.toLowerCase()) && s.note.trim(),
-  );
+/** Highlighted experiences with AI-tailored bullets swapped in when available. */
+function cvExperiences(p: Profile, v: Vacancy) {
+  const tailored = new Map((v.tailoredExperiences || []).map((t) => [t.id, t.bullets]));
+  return pickedExperiences(p, v).map((e) => {
+    const t = tailored.get(e.id);
+    return t && t.length ? { ...e, bullets: t } : e;
+  });
 }
 
 function cvPlainText(p: Profile, v: Vacancy) {
-  const exps = pickedExperiences(p, v);
-  const added = relevantAddedSkills(p, v);
+  const exps = cvExperiences(p, v);
   return [
     (p.name || "CANDIDATO").toUpperCase(),
     [p.location, p.phone, p.email, ...p.links].filter(Boolean).join(" · "),
@@ -66,9 +66,6 @@ function cvPlainText(p: Profile, v: Vacancy) {
       ...e.bullets.map((b) => `• ${b}`),
       "",
     ]),
-    ...(added.length
-      ? ["EXPERIENCIA COMPLEMENTARIA", ...added.map((s) => `• ${s.name}: ${s.note}`), ""]
-      : []),
     "EDUCACIÓN Y CERTIFICACIONES",
     ...(p.education || []).map((e) => `${e.title} — ${e.org} (${e.period})`),
     "",
@@ -348,14 +345,14 @@ export default function AdaptarPage() {
 }
 
 function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
-  const { updateVacancy, markSent, setProfile } = useDeck();
+  const { updateVacancy, markSent, setProfile, readaptVacancy } = useDeck();
   const toast = useToast();
-  const exps = useMemo(() => pickedExperiences(profile, vacancy), [profile, vacancy]);
-  const added = useMemo(() => relevantAddedSkills(profile, vacancy), [profile, vacancy]);
+  const exps = useMemo(() => cvExperiences(profile, vacancy), [profile, vacancy]);
   const calce = useMemo(() => calceScore(vacancy), [vacancy]);
   const [showRaw, setShowRaw] = useState(false);
   const [gapDraft, setGapDraft] = useState<{ name: string; note: string } | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [readapting, setReadapting] = useState(false);
 
   const copy = (text: string, label: string) => {
     navigator.clipboard?.writeText(text);
@@ -386,22 +383,29 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
     }
   };
 
-  const saveGap = () => {
-    if (!gapDraft) return;
+  const saveGap = async () => {
+    if (!gapDraft || readapting) return;
     const name = gapDraft.name;
-    setProfile({
+    const nextProfile: Profile = {
       ...profile,
       addedSkills: [
         ...(profile.addedSkills ?? []),
         { id: newId("as"), name, note: gapDraft.note.trim() },
       ],
-    });
-    updateVacancy(vacancy.id, {
-      gaps: vacancy.gaps.filter((x) => x !== name),
-      matched: [...vacancy.matched, name],
-    });
+    };
+    setProfile(nextProfile);
     setGapDraft(null);
-    toast(`${name} agregada a tu información`, "ok");
+    setReadapting(true);
+    try {
+      // Re-run the AI adaptation with the updated profile so the whole CV
+      // (summary, matched, priorities, message) is rebuilt coherently.
+      await readaptVacancy(vacancy.id, nextProfile);
+      toast(`${name} añadida — CV rearmado con IA`, "ok");
+    } catch {
+      toast("No se pudo rearmar el CV");
+    } finally {
+      setReadapting(false);
+    }
   };
 
   return (
@@ -513,9 +517,11 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={saveGap}
-                  className="rounded-full bg-brass px-3 py-1.5 text-[12px] font-semibold text-[#1a1305] hover:bg-brass-soft"
+                  disabled={readapting}
+                  className="flex items-center gap-1.5 rounded-full bg-brass px-3 py-1.5 text-[12px] font-semibold text-[#1a1305] hover:bg-brass-soft disabled:opacity-60"
                 >
-                  Guardar
+                  {readapting && <RefreshCw className="h-3 w-3 animate-spin" />}
+                  {readapting ? "Rearmando CV con IA…" : "Guardar y rearmar CV"}
                 </button>
                 <button
                   onClick={() => setGapDraft(null)}
@@ -539,16 +545,22 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
       <div className="reveal-3 grid grid-cols-12 gap-8">
         <section className="col-span-12 lg:col-span-7">
           <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-[13px] font-medium text-ink-mid">
+            <span className="flex items-center gap-2 text-[13px] font-medium text-ink-mid">
               CV adaptado
-              <span className="ml-2 text-[12px] text-ink-lo">
-                {exps.length} experiencia{exps.length === 1 ? "" : "s"} priorizada
-                {exps.length === 1 ? "" : "s"}
-              </span>
+              {readapting ? (
+                <span className="flex items-center gap-1 text-[12px] text-brass-soft">
+                  <RefreshCw className="h-3 w-3 animate-spin" /> rearmando con IA…
+                </span>
+              ) : (
+                <span className="text-[12px] text-ink-lo">
+                  {exps.length} experiencia{exps.length === 1 ? "" : "s"} priorizada
+                  {exps.length === 1 ? "" : "s"}
+                </span>
+              )}
             </span>
             <button
               onClick={downloadPdf}
-              disabled={pdfBusy}
+              disabled={pdfBusy || readapting}
               className="well card-hover flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-ink-mid hover:text-ink-hi disabled:opacity-60"
             >
               {pdfBusy ? (
@@ -559,7 +571,11 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
               {pdfBusy ? "Generando…" : "Descargar CV en PDF"}
             </button>
           </div>
-          <div className="space-y-4 rounded-lg bg-[#FBFAF6] p-6 font-serif text-black shadow-[0_2px_10px_rgba(0,0,0,0.4),0_36px_70px_-28px_rgba(0,0,0,0.85)] ring-1 ring-black/5 sm:p-8">
+          <div
+            className={`space-y-4 rounded-lg bg-[#FBFAF6] p-6 font-serif text-black shadow-[0_2px_10px_rgba(0,0,0,0.4),0_36px_70px_-28px_rgba(0,0,0,0.85)] ring-1 ring-black/5 transition-opacity sm:p-8 ${
+              readapting ? "opacity-50" : ""
+            }`}
+          >
             <div className="border-b border-black/80 pb-3 text-center">
               <h1 className="text-xl font-bold uppercase tracking-wide">{profile.name || "CANDIDATO"}</h1>
               <p className="mt-1 font-sans text-[11px] text-gray-700">
@@ -608,20 +624,6 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
                 ))}
               </div>
             </div>
-            {added.length > 0 && (
-              <div>
-                <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
-                  Experiencia complementaria
-                </h2>
-                <ul className="ml-4 mt-2 list-disc space-y-1 text-[12px] text-gray-800">
-                  {added.map((s) => (
-                    <li key={s.id}>
-                      <span className="font-bold">{s.name}:</span> {s.note}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
             <div>
               <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
                 Educación e idiomas
