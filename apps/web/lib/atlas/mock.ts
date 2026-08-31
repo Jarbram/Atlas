@@ -97,7 +97,7 @@ export const EMPTY_PROFILE: Profile = {
 };
 
 export const isProfileEmpty = (p?: Profile | null) =>
-  !p || (!p.name?.trim() && (!p.experiences || p.experiences.length === 0));
+  !p || (!p.experiences?.length && !p.skills?.length && !p.summary?.trim());
 
 export const flatSkills = (p: Profile) => p.skills.flatMap((g) => g.items);
 

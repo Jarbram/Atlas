@@ -16,12 +16,10 @@ import {
   MapPin,
   Mail,
   Link2,
-  Download,
   Building2,
   FileUp,
   RefreshCw,
   Sparkles,
-  RotateCcw,
 } from "lucide-react";
 import { Profile, newId, isProfileEmpty } from "@/lib/atlas/mock";
 import { useDeck, useToast } from "@/lib/atlas/store";
@@ -32,7 +30,7 @@ const inputCls =
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { profile, setProfile, resetProfile, parseAndSetProfile } = useDeck();
+  const { profile, setProfile, parseAndSetProfile } = useDeck();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Profile>(profile);
@@ -95,21 +93,31 @@ export default function PerfilPage() {
   // ─── Onboarding / Empty state view (First time / New account) ───────────────
   if (isEmpty && !editing) {
     return (
-      <div className="mx-auto w-full max-w-[1000px] px-4 py-12 sm:px-6 lg:px-10">
+      <div className="mx-auto flex min-h-[75vh] w-full max-w-[800px] flex-col items-center justify-center px-4 py-12 sm:px-6">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.txt"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+          }}
+        />
+
         <div className="text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-brass/30 bg-brass/10 shadow-[0_0_30px_-5px_rgba(240,194,76,0.3)]">
             <Sparkles className="h-7 w-7 text-brass" />
           </div>
-          <h1 className="mt-4 font-display text-[32px] font-semibold tracking-tight text-ink-hi sm:text-[40px]">
+          <h1 className="mt-5 font-display text-[32px] font-semibold tracking-tight text-ink-hi sm:text-[40px]">
             Carga tu Curriculum Vitae
           </h1>
-          <p className="mx-auto mt-2 max-w-xl text-[14px] leading-relaxed text-ink-mid">
-            Para comenzar, sube tu CV en formato PDF. Nuestro motor de Inteligencia Artificial
-            extraerá y organizará tu experiencia laboral, habilidades técnicas y educación para adaptar tus postulaciones.
+          <p className="mx-auto mt-2 max-w-lg text-[14px] leading-relaxed text-ink-mid">
+            Sube tu CV en PDF para que nuestro motor de Inteligencia Artificial extraiga automáticamente tu experiencia, habilidades y educación.
           </p>
         </div>
 
-        {/* Dropzone */}
+        {/* Single action dropzone */}
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -123,23 +131,12 @@ export default function PerfilPage() {
             if (file) handleFileUpload(file);
           }}
           onClick={() => !uploading && fileInputRef.current?.click()}
-          className={`card mt-8 cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
+          className={`card mt-8 w-full max-w-lg cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
             dragOver
               ? "border-brass bg-brass/10 scale-[1.01]"
               : "border-[rgba(255,235,190,0.15)] hover:border-brass/50 hover:bg-[rgba(255,235,190,0.02)]"
           }`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.txt"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFileUpload(file);
-            }}
-          />
-
           {uploading ? (
             <div className="space-y-5 py-6">
               <RefreshCw className="mx-auto h-10 w-10 animate-spin text-brass" />
@@ -147,10 +144,10 @@ export default function PerfilPage() {
                 <p className="font-display text-[18px] font-semibold text-ink-hi">
                   {uploadStep === 1
                     ? "Leyendo documento PDF..."
-                    : "Extrayendo experiencia y habilidades con IA..."}
+                    : "Extrayendo perfil con IA..."}
                 </p>
                 <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-lo">
-                  DeepSeek Neural Cartography Engine
+                  DeepSeek AI Extraction
                 </p>
               </div>
             </div>
@@ -161,53 +158,41 @@ export default function PerfilPage() {
               </div>
               <div>
                 <p className="text-[16px] font-medium text-ink-hi">
-                  Haz clic para seleccionar o arrastra tu archivo PDF aquí
+                  Arrastra tu archivo PDF o haz clic aquí
                 </p>
                 <p className="mt-1 text-[12px] text-ink-lo">
-                  Formatos soportados: PDF, TXT (Hasta 10 MB)
+                  Formatos soportados: PDF, TXT
                 </p>
               </div>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-brass px-5 py-2.5 text-[13px] font-semibold text-[#1a1305] transition-colors hover:bg-brass-soft"
+                className="inline-flex items-center gap-2 rounded-full bg-brass px-6 py-3 text-[14px] font-semibold text-[#1a1305] transition-colors hover:bg-brass-soft"
               >
-                <FileUp className="h-4 w-4" /> Seleccionar archivo PDF
+                <FileUp className="h-4 w-4" /> Cargar CV (PDF)
               </button>
             </div>
           )}
         </div>
 
-        {/* Alternative: manual start */}
-        <div className="mt-6 flex items-center justify-center gap-3 text-center">
-          <span className="text-[13px] text-ink-lo">¿Prefieres no subir archivo?</span>
+        {/* Alternative: manual fill */}
+        <div className="mt-6 text-center">
           <button
             onClick={() => {
               setDraft(structuredClone(profile));
               setEditing(true);
             }}
-            className="text-[13px] font-medium text-brass hover:underline"
+            className="text-[13px] font-medium text-ink-lo transition-colors hover:text-brass hover:underline"
           >
-            Completar perfil manualmente →
+            O completar perfil manualmente →
           </button>
         </div>
       </div>
     );
   }
 
-  // ─── Profile Details View (Already configured profile) ──────────────────────
+  // ─── Profile Details View (Only visible once CV has been uploaded) ───────────
   return (
     <div className={`mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10 ${editing ? "pb-28" : ""}`}>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,.txt"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileUpload(file);
-        }}
-      />
-
       {/* Hero */}
       <div className="reveal flex flex-col gap-6 border-b border-[rgba(255,235,190,0.08)] pb-8 sm:flex-row sm:items-center">
         <div className="relative shrink-0">
@@ -229,7 +214,7 @@ export default function PerfilPage() {
                 className={inputCls}
                 value={draft.title}
                 onChange={(e) => set({ title: e.target.value })}
-                placeholder="Titular profesional (ej. Administración · AI Ops)"
+                placeholder="Titular profesional"
               />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <input className={inputCls} value={draft.location} onChange={(e) => set({ location: e.target.value })} placeholder="Ubicación" />
@@ -271,39 +256,12 @@ export default function PerfilPage() {
         </div>
 
         {!editing && (
-          <div className="flex flex-wrap shrink-0 items-center gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="well card-hover flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-medium text-ink-mid hover:text-ink-hi disabled:opacity-50"
-            >
-              {uploading ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Procesando…
-                </>
-              ) : (
-                <>
-                  <FileUp className="h-3.5 w-3.5 text-brass" /> Cargar nuevo PDF
-                </>
-              )}
-            </button>
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={start}
-              className="flex items-center gap-2 rounded-full bg-brass px-4 py-2.5 text-[13px] font-semibold text-[#1a1305] transition-colors hover:bg-brass-soft"
+              className="flex items-center gap-2 rounded-full bg-brass px-5 py-2.5 text-[13px] font-semibold text-[#1a1305] transition-colors hover:bg-brass-soft"
             >
               <Pencil className="h-3.5 w-3.5" /> Editar perfil
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("¿Estás seguro de que deseas reiniciar y vaciar todos los datos de tu perfil?")) {
-                  resetProfile();
-                  toast("Perfil reiniciado");
-                }
-              }}
-              title="Vaciar perfil"
-              className="rounded-full p-2.5 text-ink-lo hover:bg-[rgba(255,235,190,0.05)] hover:text-caution"
-            >
-              <RotateCcw className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -324,7 +282,7 @@ export default function PerfilPage() {
               />
             ) : (
               <p className="text-[14px] leading-[1.75] text-ink-mid">
-                {p.summary || "Aún no has añadido un resumen profesional."}
+                {p.summary || "Sin resumen especificado."}
               </p>
             )}
           </Card>
@@ -358,7 +316,7 @@ export default function PerfilPage() {
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <input className={inputCls} value={e.company} placeholder="Empresa" onChange={(ev) => patchArr(draft, set, "experiences", i, { company: ev.target.value })} />
                       <input className={inputCls} value={e.location} placeholder="Ubicación" onChange={(ev) => patchArr(draft, set, "experiences", i, { location: ev.target.value })} />
-                      <input className={inputCls} value={e.period} placeholder="Periodo (ej. 2023 - Presente)" onChange={(ev) => patchArr(draft, set, "experiences", i, { period: ev.target.value })} />
+                      <input className={inputCls} value={e.period} placeholder="Periodo" onChange={(ev) => patchArr(draft, set, "experiences", i, { period: ev.target.value })} />
                     </div>
                     <textarea
                       className={`${inputCls} resize-y leading-relaxed`}
@@ -446,7 +404,7 @@ export default function PerfilPage() {
                           items: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
                         })
                       }
-                      placeholder="Habilidades separadas por coma (React, TypeScript, SQL...)"
+                      placeholder="Habilidades separadas por coma"
                     />
                   </div>
                 ) : (
@@ -490,7 +448,7 @@ export default function PerfilPage() {
                       <RmBtn onClick={() => set({ education: draft.education.filter((x) => x.id !== e.id) })} />
                     </div>
                     <input className={inputCls} value={e.org} placeholder="Institución / Universidad" onChange={(ev) => patchArr(draft, set, "education", i, { org: ev.target.value })} />
-                    <input className={inputCls} value={e.period} placeholder="Periodo (ej. 2018 - 2022)" onChange={(ev) => patchArr(draft, set, "education", i, { period: ev.target.value })} />
+                    <input className={inputCls} value={e.period} placeholder="Periodo" onChange={(ev) => patchArr(draft, set, "education", i, { period: ev.target.value })} />
                   </div>
                 ) : (
                   <div key={e.id}>
@@ -520,7 +478,7 @@ export default function PerfilPage() {
                 editing ? (
                   <div key={l.id} className="flex items-center gap-2">
                     <input className={inputCls} value={l.name} placeholder="Idioma" onChange={(ev) => patchArr(draft, set, "languages", i, { name: ev.target.value })} />
-                    <input className={inputCls} value={l.level} placeholder="Nivel (ej. Nativo, Avanzado)" onChange={(ev) => patchArr(draft, set, "languages", i, { level: ev.target.value })} />
+                    <input className={inputCls} value={l.level} placeholder="Nivel" onChange={(ev) => patchArr(draft, set, "languages", i, { level: ev.target.value })} />
                     <RmBtn onClick={() => set({ languages: draft.languages.filter((x) => x.id !== l.id) })} />
                   </div>
                 ) : (
