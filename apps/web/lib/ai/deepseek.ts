@@ -78,3 +78,120 @@ export async function adaptWithDeepSeek(raw: string, profile: Profile): Promise<
     message: String(parsed.message || "").trim(),
   };
 }
+
+const CV_PARSE_SYSTEM = `Eres un extractor experto de perfiles profesionales y CVs.
+Recibes el texto plano extraído de un Curriculum Vitae (CV) / Resume en cualquier idioma y debes estructurarlo en español con la forma exacta JSON:
+{
+  "name": string,
+  "title": string,
+  "location": string,
+  "phone": string,
+  "email": string,
+  "links": string[],
+  "summary": string,
+  "skills": [
+    {
+      "id": string,
+      "group": string,
+      "items": string[]
+    }
+  ],
+  "experiences": [
+    {
+      "id": string,
+      "role": string,
+      "company": string,
+      "location": string,
+      "period": string,
+      "bullets": string[]
+    }
+  ],
+  "education": [
+    {
+      "id": string,
+      "title": string,
+      "org": string,
+      "period": string
+    }
+  ],
+  "languages": [
+    {
+      "id": string,
+      "name": string,
+      "level": string
+    }
+  ]
+}
+Devuelve EXCLUSIVAMENTE el objeto JSON válido. No agregues explicaciones fuera del JSON. Si no encuentras algún dato, déjalo como cadena vacía o arreglo vacío sin inventar información no presente en el documento.`;
+
+export async function parseCVWithDeepSeek(rawCV: string): Promise<Profile> {
+  if (!client) throw new Error("no-key");
+
+  const completion = await client.chat.completions.create({
+    model: "deepseek-chat",
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: CV_PARSE_SYSTEM },
+      { role: "user", content: `CV TEXTO EXTRAÍDO:\n${rawCV.slice(0, 12000)}` },
+    ],
+  });
+
+  const parsed = JSON.parse(completion.choices[0]?.message?.content ?? "{}");
+
+  const skills = Array.isArray(parsed.skills)
+    ? parsed.skills.map((s: any, idx: number) => ({
+        id: s.id || `sk-${idx + 1}`,
+        group: String(s.group || "Habilidades").trim(),
+        items: Array.isArray(s.items)
+          ? s.items.map((it: any) => String(it).trim()).filter(Boolean)
+          : [],
+      }))
+    : [];
+
+  const experiences = Array.isArray(parsed.experiences)
+    ? parsed.experiences.map((e: any, idx: number) => ({
+        id: e.id || `ex-${idx + 1}`,
+        role: String(e.role || "").trim(),
+        company: String(e.company || "").trim(),
+        location: String(e.location || "Remoto").trim(),
+        period: String(e.period || "").trim(),
+        bullets: Array.isArray(e.bullets)
+          ? e.bullets.map((b: any) => String(b).trim()).filter(Boolean)
+          : [],
+      }))
+    : [];
+
+  const education = Array.isArray(parsed.education)
+    ? parsed.education.map((ed: any, idx: number) => ({
+        id: ed.id || `ed-${idx + 1}`,
+        title: String(ed.title || "").trim(),
+        org: String(ed.org || "").trim(),
+        period: String(ed.period || "").trim(),
+      }))
+    : [];
+
+  const languages = Array.isArray(parsed.languages)
+    ? parsed.languages.map((l: any, idx: number) => ({
+        id: l.id || `lg-${idx + 1}`,
+        name: String(l.name || "").trim(),
+        level: String(l.level || "Intermedio").trim(),
+      }))
+    : [];
+
+  return {
+    name: String(parsed.name || "").trim(),
+    title: String(parsed.title || "").trim(),
+    location: String(parsed.location || "").trim(),
+    phone: String(parsed.phone || "").trim(),
+    email: String(parsed.email || "").trim(),
+    links: Array.isArray(parsed.links)
+      ? parsed.links.map((l: any) => String(l).trim()).filter(Boolean)
+      : [],
+    summary: String(parsed.summary || "").trim(),
+    skills,
+    experiences,
+    education,
+    languages,
+  };
+}

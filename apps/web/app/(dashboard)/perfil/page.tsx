@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Briefcase,
   GraduationCap,
@@ -17,8 +17,14 @@ import {
   Link2,
   Download,
   Building2,
+  FileUp,
+  RefreshCw,
+  Sparkles,
+  FileText,
+  AlertCircle,
+  RotateCcw,
 } from "lucide-react";
-import { Profile, newId } from "@/lib/atlas/mock";
+import { Profile, newId, isProfileEmpty } from "@/lib/atlas/mock";
 import { useDeck, useToast } from "@/lib/atlas/store";
 import { Tag } from "@/components/atlas/bits";
 
@@ -26,32 +32,181 @@ const inputCls =
   "w-full rounded-lg well px-2.5 py-1.5 text-[13px] text-ink-hi outline-none focus:border-brass/50";
 
 export default function PerfilPage() {
-  const { profile, setProfile } = useDeck();
+  const { profile, setProfile, resetProfile, parseAndSetProfile } = useDeck();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Profile>(profile);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStep, setUploadStep] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEmpty = isProfileEmpty(profile);
 
   const start = () => {
     setDraft(structuredClone(profile));
     setEditing(true);
   };
+
   const save = () => {
     setProfile(draft);
     setEditing(false);
     toast("Información actualizada", "ok");
   };
+
   const cancel = () => setEditing(false);
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf") && !file.name.toLowerCase().endsWith(".txt")) {
+      toast("Por favor selecciona un archivo PDF o TXT válido");
+      return;
+    }
+
+    setUploading(true);
+    setUploadStep(1);
+
+    const stepTimer = setTimeout(() => setUploadStep(2), 1200);
+
+    try {
+      const parsed = await parseAndSetProfile(file);
+      setDraft(structuredClone(parsed));
+      toast(`¡Perfil de ${parsed.name || "candidato"} cargado exitosamente!`, "ok");
+    } catch (err: any) {
+      console.error("Error al procesar el CV:", err);
+      toast(err.message || "Error al procesar el archivo PDF");
+    } finally {
+      clearTimeout(stepTimer);
+      setUploading(false);
+      setUploadStep(0);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const p = editing ? draft : profile;
   const set = (patch: Partial<Profile>) => setDraft({ ...draft, ...patch });
 
+  // ─── Onboarding / Empty state view ─────────────────────────────────────────
+  if (isEmpty && !editing) {
+    return (
+      <div className="mx-auto w-full max-w-[1000px] px-4 py-12 sm:px-6 lg:px-10">
+        <div className="text-center">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-brass/30 bg-brass/10 shadow-[0_0_30px_-5px_rgba(240,194,76,0.3)]">
+            <Sparkles className="h-7 w-7 text-brass" />
+          </div>
+          <h1 className="mt-4 font-display text-[32px] font-semibold tracking-tight text-ink-hi sm:text-[40px]">
+            Configura tu perfil profesional
+          </h1>
+          <p className="mx-auto mt-2 max-w-xl text-[14px] leading-relaxed text-ink-mid">
+            Carga tu Curriculum Vitae en formato PDF para que nuestro motor de Inteligencia Artificial
+            extraiga y estructure automáticamente tu experiencia, tecnologías, educación e información.
+          </p>
+        </div>
+
+        {/* Dropzone */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) handleFileUpload(file);
+          }}
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          className={`card mt-8 cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
+            dragOver
+              ? "border-brass bg-brass/10 scale-[1.01]"
+              : "border-[rgba(255,235,190,0.15)] hover:border-brass/50 hover:bg-[rgba(255,235,190,0.02)]"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file);
+            }}
+          />
+
+          {uploading ? (
+            <div className="space-y-5 py-4">
+              <RefreshCw className="mx-auto h-10 w-10 animate-spin text-brass" />
+              <div>
+                <p className="font-display text-[18px] font-semibold text-ink-hi">
+                  {uploadStep === 1
+                    ? "Leyendo documento PDF..."
+                    : "Extrayendo experiencia y habilidades con IA..."}
+                </p>
+                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-lo">
+                  DeepSeek Neural Cartography Engine
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-brass/20 bg-chart-raised text-brass">
+                <FileUp className="h-8 w-8" />
+              </div>
+              <div>
+                <p className="text-[16px] font-medium text-ink-hi">
+                  Haz clic para seleccionar o arrastra tu archivo PDF aquí
+                </p>
+                <p className="mt-1 text-[12px] text-ink-lo">
+                  Formatos soportados: PDF, TXT (Hasta 10 MB)
+                </p>
+              </div>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full bg-brass px-5 py-2.5 text-[13px] font-semibold text-[#1a1305] transition-colors hover:bg-brass-soft"
+              >
+                <FileUp className="h-4 w-4" /> Seleccionar archivo PDF
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Alternative: manual start */}
+        <div className="mt-6 flex items-center justify-center gap-3 text-center">
+          <span className="text-[13px] text-ink-lo">¿No tienes tu CV a la mano?</span>
+          <button
+            onClick={() => {
+              setDraft(structuredClone(profile));
+              setEditing(true);
+            }}
+            className="text-[13px] font-medium text-brass hover:underline"
+          >
+            Completar manualmente →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Profile Details View ──────────────────────────────────────────────────
   return (
     <div className={`mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10 ${editing ? "pb-28" : ""}`}>
-      {/* hero */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.txt"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFileUpload(file);
+        }}
+      />
+
+      {/* Hero */}
       <div className="reveal flex flex-col gap-6 border-b border-[rgba(255,235,190,0.08)] pb-8 sm:flex-row sm:items-center">
         <div className="relative shrink-0">
           <span className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-brass/50 bg-chart-raised font-display text-[34px] font-semibold text-brass-soft shadow-[0_0_44px_-8px_rgba(240,194,76,0.4)]">
-            {p.name.trim().charAt(0).toUpperCase()}
+            {(p.name || "A").trim().charAt(0).toUpperCase()}
           </span>
         </div>
 
@@ -68,7 +223,7 @@ export default function PerfilPage() {
                 className={inputCls}
                 value={draft.title}
                 onChange={(e) => set({ title: e.target.value })}
-                placeholder="Titular profesional"
+                placeholder="Titular profesional (ej. Administración · AI Ops)"
               />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <input className={inputCls} value={draft.location} onChange={(e) => set({ location: e.target.value })} placeholder="Ubicación" />
@@ -79,22 +234,26 @@ export default function PerfilPage() {
                 className={inputCls}
                 value={draft.links.join(", ")}
                 onChange={(e) => set({ links: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                placeholder="Enlaces separados por coma"
+                placeholder="Enlaces separados por coma (LinkedIn, GitHub, Portafolio)"
               />
             </div>
           ) : (
             <>
               <h1 className="font-display text-[34px] font-semibold leading-[1.05] tracking-tight text-ink-hi sm:text-[42px]">
-                {p.name}
+                {p.name || "Perfil sin nombre"}
               </h1>
-              <p className="mt-1 text-[16px] font-medium text-brass">{p.title}</p>
+              <p className="mt-1 text-[16px] font-medium text-brass">{p.title || "Titular profesional no definido"}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-ink-mid">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-ink-lo" /> {p.location}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-ink-lo" /> {p.email}
-                </span>
+                {p.location && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-ink-lo" /> {p.location}
+                  </span>
+                )}
+                {p.email && (
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-ink-lo" /> {p.email}
+                  </span>
+                )}
                 {p.links.map((l) => (
                   <span key={l} className="flex items-center gap-1.5">
                     <Link2 className="h-3.5 w-3.5 text-ink-lo" /> {l}
@@ -106,12 +265,21 @@ export default function PerfilPage() {
         </div>
 
         {!editing && (
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap shrink-0 items-center gap-2">
             <button
-              onClick={() => toast("PDF del perfil — próximamente")}
-              className="well card-hover flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-medium text-ink-mid hover:text-ink-hi"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="well card-hover flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-medium text-ink-mid hover:text-ink-hi disabled:opacity-50"
             >
-              <Download className="h-3.5 w-3.5" /> Exportar PDF
+              {uploading ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Procesando…
+                </>
+              ) : (
+                <>
+                  <FileUp className="h-3.5 w-3.5 text-brass" /> Cargar nuevo PDF
+                </>
+              )}
             </button>
             <button
               onClick={start}
@@ -119,13 +287,25 @@ export default function PerfilPage() {
             >
               <Pencil className="h-3.5 w-3.5" /> Editar perfil
             </button>
+            <button
+              onClick={() => {
+                if (confirm("¿Estás seguro de que deseas reiniciar y vaciar todos los datos de tu perfil?")) {
+                  resetProfile();
+                  toast("Perfil reiniciado");
+                }
+              }}
+              title="Vaciar perfil"
+              className="rounded-full p-2.5 text-ink-lo hover:bg-[rgba(255,235,190,0.05)] hover:text-caution"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
           </div>
         )}
       </div>
 
-      {/* body */}
+      {/* Body Grid */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
-        {/* left column */}
+        {/* Left Column */}
         <div className="space-y-6">
           <Card icon={UserRound} title="Resumen profesional">
             {editing ? (
@@ -134,9 +314,12 @@ export default function PerfilPage() {
                 rows={6}
                 value={draft.summary}
                 onChange={(e) => set({ summary: e.target.value })}
+                placeholder="Escribe un breve resumen de tu trayectoria y especialidad…"
               />
             ) : (
-              <p className="text-[14px] leading-[1.75] text-ink-mid">{p.summary}</p>
+              <p className="text-[14px] leading-[1.75] text-ink-mid">
+                {p.summary || "Aún no has añadido un resumen profesional."}
+              </p>
             )}
           </Card>
 
@@ -163,19 +346,19 @@ export default function PerfilPage() {
                 {p.experiences.map((e, i) => (
                   <div key={e.id} className="well space-y-2 rounded-xl p-3">
                     <div className="flex items-center gap-2">
-                      <input className={inputCls} value={e.role} placeholder="Cargo" onChange={(ev) => patchArr(draft, set, "experiences", i, { role: ev.target.value })} />
+                      <input className={inputCls} value={e.role} placeholder="Cargo / Rol" onChange={(ev) => patchArr(draft, set, "experiences", i, { role: ev.target.value })} />
                       <RmBtn onClick={() => set({ experiences: draft.experiences.filter((x) => x.id !== e.id) })} />
                     </div>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <input className={inputCls} value={e.company} placeholder="Empresa" onChange={(ev) => patchArr(draft, set, "experiences", i, { company: ev.target.value })} />
                       <input className={inputCls} value={e.location} placeholder="Ubicación" onChange={(ev) => patchArr(draft, set, "experiences", i, { location: ev.target.value })} />
-                      <input className={inputCls} value={e.period} placeholder="Periodo" onChange={(ev) => patchArr(draft, set, "experiences", i, { period: ev.target.value })} />
+                      <input className={inputCls} value={e.period} placeholder="Periodo (ej. 2023 - Presente)" onChange={(ev) => patchArr(draft, set, "experiences", i, { period: ev.target.value })} />
                     </div>
                     <textarea
                       className={`${inputCls} resize-y leading-relaxed`}
                       rows={4}
                       value={e.bullets.join("\n")}
-                      placeholder="Un logro por línea"
+                      placeholder="Logros y responsabilidades (un logro por línea)"
                       onChange={(ev) =>
                         patchArr(draft, set, "experiences", i, {
                           bullets: ev.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
@@ -184,8 +367,11 @@ export default function PerfilPage() {
                     />
                   </div>
                 ))}
+                {p.experiences.length === 0 && (
+                  <p className="text-[13px] text-ink-lo">Sin experiencias añadidas aún.</p>
+                )}
               </div>
-            ) : (
+            ) : p.experiences.length > 0 ? (
               <ol className="relative space-y-6 border-l border-[rgba(255,235,190,0.12)] pl-7">
                 {p.experiences.map((e, i) => (
                   <li key={e.id} className="relative">
@@ -196,9 +382,11 @@ export default function PerfilPage() {
                     />
                     <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
                       <span className="font-display text-[16px] font-semibold text-ink-hi">{e.role}</span>
-                      <span className="tabular shrink-0 rounded-md border border-brass/25 bg-brass/10 px-2 py-0.5 font-mono text-[11px] text-brass-soft">
-                        {e.period}
-                      </span>
+                      {e.period && (
+                        <span className="tabular shrink-0 rounded-md border border-brass/25 bg-brass/10 px-2 py-0.5 font-mono text-[11px] text-brass-soft">
+                          {e.period}
+                        </span>
+                      )}
                     </div>
                     <p className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-mid">
                       <Building2 className="h-3.5 w-3.5 text-ink-lo" /> {e.company}
@@ -214,11 +402,13 @@ export default function PerfilPage() {
                   </li>
                 ))}
               </ol>
+            ) : (
+              <p className="text-[13px] text-ink-lo">No hay experiencias laborales registradas.</p>
             )}
           </Card>
         </div>
 
-        {/* right column */}
+        {/* Right Column */}
         <div className="space-y-6">
           <Card
             icon={Terminal}
@@ -238,7 +428,7 @@ export default function PerfilPage() {
                 editing ? (
                   <div key={g.id} className="well rounded-xl p-3">
                     <div className="flex items-center gap-2">
-                      <input className={inputCls} value={g.group} onChange={(e) => patchArr(draft, set, "skills", i, { group: e.target.value })} />
+                      <input className={inputCls} value={g.group} placeholder="Nombre de categoría" onChange={(e) => patchArr(draft, set, "skills", i, { group: e.target.value })} />
                       <RmBtn onClick={() => set({ skills: draft.skills.filter((x) => x.id !== g.id) })} />
                     </div>
                     <textarea
@@ -250,7 +440,7 @@ export default function PerfilPage() {
                           items: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
                         })
                       }
-                      placeholder="Separados por coma"
+                      placeholder="Habilidades separadas por coma (React, TypeScript, SQL...)"
                     />
                   </div>
                 ) : (
@@ -265,6 +455,9 @@ export default function PerfilPage() {
                     </div>
                   </div>
                 ),
+              )}
+              {p.skills.length === 0 && (
+                <p className="text-[13px] text-ink-lo">No se han especificado habilidades técnicas.</p>
               )}
             </div>
           </Card>
@@ -287,19 +480,22 @@ export default function PerfilPage() {
                 editing ? (
                   <div key={e.id} className="well space-y-2 rounded-xl p-3">
                     <div className="flex items-center gap-2">
-                      <input className={inputCls} value={e.title} placeholder="Título" onChange={(ev) => patchArr(draft, set, "education", i, { title: ev.target.value })} />
+                      <input className={inputCls} value={e.title} placeholder="Título o Carrera" onChange={(ev) => patchArr(draft, set, "education", i, { title: ev.target.value })} />
                       <RmBtn onClick={() => set({ education: draft.education.filter((x) => x.id !== e.id) })} />
                     </div>
-                    <input className={inputCls} value={e.org} placeholder="Institución" onChange={(ev) => patchArr(draft, set, "education", i, { org: ev.target.value })} />
-                    <input className={inputCls} value={e.period} placeholder="Periodo" onChange={(ev) => patchArr(draft, set, "education", i, { period: ev.target.value })} />
+                    <input className={inputCls} value={e.org} placeholder="Institución / Universidad" onChange={(ev) => patchArr(draft, set, "education", i, { org: ev.target.value })} />
+                    <input className={inputCls} value={e.period} placeholder="Periodo (ej. 2018 - 2022)" onChange={(ev) => patchArr(draft, set, "education", i, { period: ev.target.value })} />
                   </div>
                 ) : (
                   <div key={e.id}>
                     <p className="text-[14px] font-medium leading-snug text-ink-hi">{e.title}</p>
                     <p className="mt-0.5 text-[13px] text-brass-soft">{e.org}</p>
-                    <p className="tabular mt-0.5 font-mono text-[11px] text-ink-lo">{e.period}</p>
+                    {e.period && <p className="tabular mt-0.5 font-mono text-[11px] text-ink-lo">{e.period}</p>}
                   </div>
                 ),
+              )}
+              {p.education.length === 0 && (
+                <p className="text-[13px] text-ink-lo">No se han registrado títulos o educación.</p>
               )}
             </div>
           </Card>
@@ -318,7 +514,7 @@ export default function PerfilPage() {
                 editing ? (
                   <div key={l.id} className="flex items-center gap-2">
                     <input className={inputCls} value={l.name} placeholder="Idioma" onChange={(ev) => patchArr(draft, set, "languages", i, { name: ev.target.value })} />
-                    <input className={inputCls} value={l.level} placeholder="Nivel" onChange={(ev) => patchArr(draft, set, "languages", i, { level: ev.target.value })} />
+                    <input className={inputCls} value={l.level} placeholder="Nivel (ej. Nativo, Avanzado)" onChange={(ev) => patchArr(draft, set, "languages", i, { level: ev.target.value })} />
                     <RmBtn onClick={() => set({ languages: draft.languages.filter((x) => x.id !== l.id) })} />
                   </div>
                 ) : (
@@ -328,16 +524,20 @@ export default function PerfilPage() {
                   </div>
                 ),
               )}
+              {p.languages.length === 0 && (
+                <p className="text-[13px] text-ink-lo">No se han agregado idiomas.</p>
+              )}
             </div>
           </Card>
         </div>
       </div>
 
+      {/* Floating Save/Cancel bar */}
       {editing && (
         <div className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-[rgba(255,235,190,0.08)]">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
             <span className="flex items-center gap-2 text-[12px] text-ink-lo">
-              <span className="h-1.5 w-1.5 rounded-full bg-brass" /> Cambios sin guardar
+              <span className="h-1.5 w-1.5 rounded-full bg-brass" /> Editando información del perfil
             </span>
             <div className="flex gap-2">
               <button

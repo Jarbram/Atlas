@@ -1,9 +1,8 @@
 /**
  * @file mock.ts
- * @description Types, seed data and the (stubbed) adaptation engine for the
- * Atlas MVP. Flow: paste one blob of vacancy text -> `adaptCV` reads the
- * profile and returns a matched CV selection + a recruiter message. Swap
- * `adaptCV` for a real model call when API keys exist; the shape stays.
+ * @description Types, seed data and the adaptation engine for Atlas.
+ * Flow: paste vacancy text -> `adaptCV` reads the profile and returns a
+ * matched CV selection + a recruiter message.
  */
 
 export type VacancyStatus = "adaptada" | "postulada" | "entrevista" | "descartada";
@@ -82,6 +81,23 @@ export interface Profile {
   education: EducationItem[];
   languages: LanguageItem[];
 }
+
+export const EMPTY_PROFILE: Profile = {
+  name: "",
+  title: "",
+  location: "",
+  phone: "",
+  email: "",
+  links: [],
+  summary: "",
+  skills: [],
+  experiences: [],
+  education: [],
+  languages: [],
+};
+
+export const isProfileEmpty = (p?: Profile | null) =>
+  !p || (!p.name?.trim() && (!p.experiences || p.experiences.length === 0));
 
 export const flatSkills = (p: Profile) => p.skills.flatMap((g) => g.items);
 
@@ -259,7 +275,6 @@ function extractMeta(raw: string): { company: string; title: string } {
 
   const dash = first.split(/\s+[—–|·-]\s+/);
   if (dash.length >= 2) {
-    // heuristic: the ALL-CAPS / shorter side is usually the company
     const [a, b] = dash;
     if (a.toUpperCase() === a || a.length < b.length) {
       company = a;
@@ -298,25 +313,22 @@ function buildMessage(p: Profile, company: string, title: string, matched: strin
   const skillLine = (matched.length ? matched : flatSkills(p)).slice(0, 3).join(", ");
   const win =
     p.experiences[0]?.bullets[0]?.replace(/^[A-ZÁÉÍÓÚ][^:]{0,40}:\s*/, "").replace(/\.$/, "") ??
-    "construido y escalado productos digitales de punta a punta";
+    "construido y escalado proyectos de impacto";
+  const name = p.name || "Candidato";
+  const pTitle = p.title || "Profesional";
   return `Hola,
 
-Vi la vacante de ${title} en ${company} y me interesa mucho. Soy ${p.name}, ${p.title}.
+Vi la vacante de ${title} en ${company} y me interesa mucho. Soy ${name}, ${pTitle}.
 
 Recientemente he ${win.charAt(0).toLowerCase()}${win.slice(1)}. Mi experiencia con ${skillLine} encaja directamente con lo que describen.
 
 Te comparto mi CV adaptado a esta posición. ¿Tendrían 15 minutos esta semana para conversar?
 
 Saludos,
-${p.name}
-${p.email} · ${p.phone}`;
+${name}
+${p.email || ""} ${p.phone ? `· ${p.phone}` : ""}`.trim();
 }
 
-/**
- * The (stubbed) "AI" step: read the pasted vacancy + the profile, decide which
- * experiences match, and draft the recruiter message. Replace the body with a
- * real model call; keep the return shape.
- */
 export function adaptCV(raw: string, p: Profile) {
   const { company, title } = extractMeta(raw);
   const { matched, gaps } = analyzeVacancy(raw, flatSkills(p));
@@ -325,7 +337,7 @@ export function adaptCV(raw: string, p: Profile) {
     .split(/[^a-záéíóúñ0-9.+#]+/)
     .filter((w) => w.length > 2 && !STOP.has(w));
 
-  const scored = p.experiences.map((e) => {
+  const scored = (p.experiences || []).map((e) => {
     const text = `${e.role} ${e.company} ${e.bullets.join(" ")}`.toLowerCase();
     let score = 0;
     for (const m of matched) if (text.includes(m.toLowerCase())) score += 3;
@@ -350,34 +362,37 @@ export function adaptCV(raw: string, p: Profile) {
   };
 }
 
-// ─── Seed vacancy (first run only) ─────────────────────────────────────────
+/** Fallback heuristic parser for raw text extraction when offline */
+export function parseCVHeuristic(text: string): Profile {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const phoneMatch = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+  const links = Array.from(text.matchAll(/https?:\/\/[^\s)]+|linkedin\.com\/[^\s)]+|github\.com\/[^\s)]+/gi)).map((m) => m[0]);
 
-const SEED_RAW = `Orbital Systems Lab — Product Ops / AI Automation Specialist (Remoto)
+  const name = lines[0] || "Nombre por definir";
+  const title = lines[1] && lines[1].length < 80 ? lines[1] : "Profesional";
 
-Estamos buscando un/a Product Ops especialista en automatización con IA para escalar nuestras operaciones internas.
+  const detectedTech = TECH_DICT.filter((t) => text.toLowerCase().includes(t.toLowerCase()));
 
-Responsabilidades:
-- Diseñar y mantener flujos de automatización en n8n y Make.
-- Integrar modelos de OpenAI y Claude en procesos de negocio.
-- Definir métricas de producto (retention, churn) y tableros en Airtable / SQL.
-- Documentar procesos en Notion y coordinar iteraciones ágiles (Scrum).
-
-Requisitos:
-- Experiencia con No-Code/Low-Code y APIs.
-- Deseable: TypeScript, Supabase, Vercel.
-- Mentalidad Lean Startup y foco en velocidad de iteración.`;
+  return {
+    name,
+    title,
+    location: "Remoto",
+    phone: phoneMatch ? phoneMatch[0] : "",
+    email: emailMatch ? emailMatch[0] : "",
+    links: Array.from(new Set(links)).slice(0, 4),
+    summary: lines.slice(2, 6).join(" ").slice(0, 400),
+    skills: detectedTech.length > 0
+      ? [{ id: "sk-1", group: "Habilidades Técnicas", items: detectedTech.slice(0, 16) }]
+      : [],
+    experiences: [],
+    education: [],
+    languages: [{ id: "lg-1", name: "Español", level: "Nativo" }],
+  };
+}
 
 export function seedVacancies(): Vacancy[] {
-  const a = adaptCV(SEED_RAW, SEED_PROFILE);
-  return [
-    {
-      id: "vac-seed-1",
-      raw: SEED_RAW,
-      createdAt: "2026-08-27T09:00:00.000Z",
-      status: "adaptada",
-      ...a,
-    },
-  ];
+  return [];
 }
 
 // ─── Modules (nav) ─────────────────────────────────────────────────────────

@@ -2,9 +2,8 @@
 
 /**
  * @file store.tsx
- * @description Client session state: the vacancies the user has adapted (each
- * with its recruiter message + status) and the editable profile. Persisted to
- * localStorage. Plus a toast channel.
+ * @description Client session state: adapted vacancies, editable profile,
+ * and automated PDF CV parsing. Persisted to localStorage per session.
  */
 
 import React, {
@@ -17,15 +16,16 @@ import React, {
 } from "react";
 import {
   Profile,
-  SEED_PROFILE,
+  EMPTY_PROFILE,
   Vacancy,
   VacancyStatus,
   adaptCV,
   newId,
   seedVacancies,
 } from "./mock";
+import { createClient } from "@/lib/supabase/client";
 
-const KEY = "atlas.deck.v4";
+const KEY = "atlas.deck.v6";
 
 interface Persisted {
   vacancies: Vacancy[];
@@ -33,15 +33,15 @@ interface Persisted {
 }
 
 function read(): Persisted {
-  const fresh = { vacancies: seedVacancies(), profile: SEED_PROFILE };
-  if (typeof window === "undefined") return { vacancies: [], profile: SEED_PROFILE };
+  const fresh: Persisted = { vacancies: [], profile: EMPTY_PROFILE };
+  if (typeof window === "undefined") return fresh;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return fresh;
     const p = JSON.parse(raw);
     return {
       vacancies: Array.isArray(p.vacancies) ? p.vacancies : [],
-      profile: p.profile ?? SEED_PROFILE,
+      profile: p.profile ?? EMPTY_PROFILE,
     };
   } catch {
     return fresh;
@@ -55,17 +55,42 @@ interface DeckValue extends Persisted {
   markSent: (id: string) => void;
   removeVacancy: (id: string) => void;
   setProfile: (profile: Profile) => void;
+  resetProfile: () => void;
+  parseAndSetProfile: (fileOrText: File | string) => Promise<Profile>;
 }
 
 const DeckCtx = createContext<DeckValue | null>(null);
 
 export function DeckProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Persisted>({ vacancies: [], profile: SEED_PROFILE });
+  const [state, setState] = useState<Persisted>({ vacancies: [], profile: EMPTY_PROFILE });
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setState(read());
+    const loaded = read();
+    setState(loaded);
     setHydrated(true);
+
+    // If logged in via Supabase, prefill email/name if profile is completely empty
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        const u = data?.user;
+        if (!u) return;
+        setState((prev) => {
+          if (!prev.profile.name && !prev.profile.email) {
+            return {
+              ...prev,
+              profile: {
+                ...prev.profile,
+                name: (u.user_metadata?.full_name as string) || "",
+                email: u.email || "",
+              },
+            };
+          }
+          return prev;
+        });
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -73,7 +98,7 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
     try {
       window.localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
-      /* private mode / quota — session-only is fine */
+      /* private mode / quota */
     }
   }, [state, hydrated]);
 
@@ -86,6 +111,45 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const setProfile = useCallback((profile: Profile) => {
+    setState((s) => ({ ...s, profile }));
+  }, []);
+
+  const resetProfile = useCallback(() => {
+    setState((s) => ({ ...s, profile: EMPTY_PROFILE }));
+    try {
+      window.localStorage.removeItem(KEY);
+    } catch {}
+  }, []);
+
+  const parseAndSetProfile = useCallback(async (fileOrText: File | string): Promise<Profile> => {
+    const formData = new FormData();
+    if (typeof fileOrText === "string") {
+      formData.append("raw", fileOrText);
+    } else {
+      formData.append("file", fileOrText);
+    }
+
+    const res = await fetch("/api/parse-cv", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || "Error al procesar el archivo");
+    }
+
+    const data = await res.json();
+    if (!data.profile) {
+      throw new Error("No se pudo estructurar el perfil del CV");
+    }
+
+    const parsedProfile: Profile = data.profile;
+    setState((s) => ({ ...s, profile: parsedProfile }));
+    return parsedProfile;
+  }, []);
+
   const value = useMemo<DeckValue>(() => {
     const get = (id: string | null | undefined) =>
       id ? state.vacancies.find((v) => v.id === id) : undefined;
@@ -93,8 +157,10 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
       ...state,
       get,
       updateVacancy,
+      setProfile,
+      resetProfile,
+      parseAndSetProfile,
       adaptFromRaw: async (raw: string) => {
-        // Try the server (DeepSeek); fall back to the local heuristic offline / on error.
         let a: ReturnType<typeof adaptCV>;
         try {
           const res = await fetch("/api/adapt", {
@@ -121,9 +187,8 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
         updateVacancy(id, { status: "postulada", sentAt: new Date().toISOString() }),
       removeVacancy: (id: string) =>
         setState((s) => ({ ...s, vacancies: s.vacancies.filter((v) => v.id !== id) })),
-      setProfile: (profile: Profile) => setState((s) => ({ ...s, profile })),
     };
-  }, [state, updateVacancy]);
+  }, [state, updateVacancy, setProfile, resetProfile, parseAndSetProfile]);
 
   return <DeckCtx.Provider value={value}>{children}</DeckCtx.Provider>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   RefreshCw,
@@ -20,8 +20,9 @@ import {
   ListOrdered,
   Mail,
   FileEdit,
+  Sparkles,
 } from "lucide-react";
-import { Profile, Vacancy, calceScore } from "@/lib/atlas/mock";
+import { Profile, Vacancy, calceScore, isProfileEmpty } from "@/lib/atlas/mock";
 import { useDeck, useToast } from "@/lib/atlas/store";
 import { Eyebrow, StatusBadge, PageHeader, CalceGauge } from "@/components/atlas/bits";
 
@@ -34,19 +35,19 @@ const STEPS = [
 ];
 
 function pickedExperiences(p: Profile, v: Vacancy) {
-  const byId = new Map(p.experiences.map((e) => [e.id, e]));
+  const byId = new Map((p.experiences || []).map((e) => [e.id, e]));
   const chosen = v.experienceIds.map((id) => byId.get(id)).filter(Boolean) as Profile["experiences"];
-  return chosen.length ? chosen : p.experiences.slice(0, 3);
+  return chosen.length ? chosen : (p.experiences || []).slice(0, 3);
 }
 
 function cvPlainText(p: Profile, v: Vacancy) {
   const exps = pickedExperiences(p, v);
   return [
-    p.name.toUpperCase(),
+    (p.name || "CANDIDATO").toUpperCase(),
     [p.location, p.phone, p.email, ...p.links].filter(Boolean).join(" · "),
     "",
     "RESUMEN PROFESIONAL",
-    `${p.summary} ${v.summaryLine}`,
+    `${p.summary} ${v.summaryLine}`.trim(),
     "",
     "EXPERIENCIA",
     ...exps.flatMap((e) => [
@@ -55,10 +56,10 @@ function cvPlainText(p: Profile, v: Vacancy) {
       "",
     ]),
     "EDUCACIÓN Y CERTIFICACIONES",
-    ...p.education.map((e) => `${e.title} — ${e.org} (${e.period})`),
+    ...(p.education || []).map((e) => `${e.title} — ${e.org} (${e.period})`),
     "",
     "IDIOMAS",
-    ...p.languages.map((l) => `${l.name}: ${l.level}`),
+    ...(p.languages || []).map((l) => `${l.name}: ${l.level}`),
   ].join("\n");
 }
 
@@ -70,7 +71,9 @@ export default function AdaptarPage() {
   const [mode, setMode] = useState<"texto" | "pdf">("texto");
   const [raw, setRaw] = useState("");
   const [running, setRunning] = useState(false);
+  const [pdfUploading, setPdfUploading] = useState(false);
   const [activeStep, setActiveStep] = useState(-1);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const sync = () => setVid(new URLSearchParams(window.location.search).get("v"));
@@ -87,8 +90,47 @@ export default function AdaptarPage() {
     window.history.pushState(null, "", `/adaptar?v=${id}`);
   };
 
+  const handleVacancyPdfUpload = async (file: File) => {
+    if (!file) return;
+    setPdfUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/parse-cv", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("No se pudo leer el archivo");
+      const data = await res.json();
+      // If parsed, create a raw representation
+      if (data.profile) {
+        const p = data.profile;
+        const text = [
+          `${p.company || p.title || "Vacante"}\n`,
+          p.summary,
+          "\nRequisitos y responsabilidades:",
+          ...p.experiences.flatMap((e: any) => e.bullets),
+          ...p.skills.flatMap((s: any) => s.items),
+        ].filter(Boolean).join("\n");
+        setRaw(text);
+      }
+      setMode("texto");
+      toast("Texto de la vacante extraído", "ok");
+    } catch (err: any) {
+      toast(err.message || "Error al leer el PDF de la vacante");
+    } finally {
+      setPdfUploading(false);
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
+
   const run = async () => {
     if (chars < 40 || running) return;
+
+    if (isProfileEmpty(profile)) {
+      toast("Te recomendamos cargar tu CV primero en 'Mi información' para un mejor resultado", "info");
+    }
+
     setRunning(true);
     setActiveStep(0);
     const timers = [1, 2, 3, 4].map((s) => setTimeout(() => setActiveStep(s), s * 340));
@@ -110,6 +152,17 @@ export default function AdaptarPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept=".pdf,.txt"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleVacancyPdfUpload(f);
+        }}
+      />
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.75fr_1fr]">
         {/* left — console */}
         <div>
@@ -117,9 +170,8 @@ export default function AdaptarPage() {
             Adaptar vacante
           </h1>
           <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-ink-mid">
-            Pega la descripción completa de la vacante para iniciar el análisis. El sistema extrae
-            las habilidades clave, las cruza con tu perfil y genera una propuesta priorizada más el
-            mensaje para el reclutador.
+            Pega la descripción completa de la vacante o sube su archivo PDF para iniciar el análisis.
+            El sistema extrae las habilidades clave, las cruza con tu perfil y genera un CV optimizado y el mensaje para el reclutador.
           </p>
 
           <div className="mt-6 flex items-center justify-between gap-3">
@@ -128,11 +180,10 @@ export default function AdaptarPage() {
                 <button
                   key={m}
                   onClick={() => {
-                    if (m === "pdf") {
-                      toast("Subida de PDF — próximamente");
-                      return;
-                    }
                     setMode(m);
+                    if (m === "pdf") {
+                      pdfInputRef.current?.click();
+                    }
                   }}
                   className={`flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
                     mode === m ? "bg-brass/15 text-brass-soft" : "text-ink-lo hover:text-ink-mid"
@@ -143,7 +194,7 @@ export default function AdaptarPage() {
                   ) : (
                     <FileUp className="h-3.5 w-3.5" />
                   )}
-                  {m === "texto" ? "Pegar texto" : "Subir PDF"}
+                  {m === "texto" ? "Pegar texto" : "Subir PDF de la vacante"}
                 </button>
               ))}
             </div>
@@ -158,7 +209,7 @@ export default function AdaptarPage() {
                 ))}
               </div>
               <span className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-ink-lo">
-                Entrada de texto
+                {pdfUploading ? "Procesando documento..." : "Entrada de texto"}
               </span>
               <div className="flex items-center gap-1">
                 <button
@@ -177,16 +228,26 @@ export default function AdaptarPage() {
                 </button>
               </div>
             </div>
-            <textarea
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
-              disabled={running}
-              rows={18}
-              placeholder={
-                "Pega aquí la descripción detallada de la vacante…\n\nSe recomienda incluir:\n– Responsabilidades del cargo\n– Requisitos técnicos y habilidades blandas\n– Tecnologías o herramientas requeridas\n– Años de experiencia solicitados"
-              }
-              className="w-full resize-y bg-transparent p-5 text-[13px] leading-relaxed text-ink-hi outline-none placeholder:text-ink-lo/70 disabled:opacity-60"
-            />
+
+            {pdfUploading ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <RefreshCw className="h-8 w-8 animate-spin text-brass" />
+                <p className="mt-3 text-[14px] font-medium text-ink-hi">Leyendo PDF de la vacante…</p>
+                <p className="text-[12px] text-ink-lo">Extrayendo requerimientos y responsabilidades</p>
+              </div>
+            ) : (
+              <textarea
+                value={raw}
+                onChange={(e) => setRaw(e.target.value)}
+                disabled={running}
+                rows={18}
+                placeholder={
+                  "Pega aquí la descripción detallada de la vacante…\n\nSe recomienda incluir:\n– Responsabilidades del cargo\n– Requisitos técnicos y habilidades blandas\n– Tecnologías o herramientas requeridas\n– Años de experiencia solicitados"
+                }
+                className="w-full resize-y bg-transparent p-5 text-[13px] leading-relaxed text-ink-hi outline-none placeholder:text-ink-lo/70 disabled:opacity-60"
+              />
+            )}
+
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[rgba(255,235,190,0.07)] px-4 py-3">
               <span className="well tabular rounded-md px-2 py-1 font-mono text-[11px] text-ink-mid">
                 {chars} caracteres
@@ -263,7 +324,7 @@ export default function AdaptarPage() {
             }}
           >
             <span className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-ink-lo">
-              {running ? "Motor de inferencia · procesando" : "Motor de inferencia inactivo"}
+              {running ? "Motor de inferencia · procesando" : "Motor de inferencia listo"}
             </span>
           </div>
         </aside>
@@ -400,7 +461,7 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
           </div>
           <div className="space-y-4 rounded-lg bg-[#FBFAF6] p-6 font-serif text-black shadow-[0_2px_10px_rgba(0,0,0,0.4),0_36px_70px_-28px_rgba(0,0,0,0.85)] ring-1 ring-black/5 sm:p-8">
             <div className="border-b border-black/80 pb-3 text-center">
-              <h1 className="text-xl font-bold uppercase tracking-wide">{profile.name}</h1>
+              <h1 className="text-xl font-bold uppercase tracking-wide">{profile.name || "CANDIDATO"}</h1>
               <p className="mt-1 font-sans text-[11px] text-gray-700">
                 {[profile.location, profile.phone, profile.email, ...profile.links]
                   .filter(Boolean)
@@ -442,12 +503,12 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
                 Educación e idiomas
               </h2>
               <ul className="mt-2 space-y-0.5 text-[12px] text-gray-800">
-                {profile.education.map((e) => (
+                {(profile.education || []).map((e) => (
                   <li key={e.id}>
                     {e.title} — {e.org} ({e.period})
                   </li>
                 ))}
-                <li>{profile.languages.map((l) => `${l.name}: ${l.level}`).join("  ·  ")}</li>
+                <li>{(profile.languages || []).map((l) => `${l.name}: ${l.level}`).join("  ·  ")}</li>
               </ul>
             </div>
           </div>
