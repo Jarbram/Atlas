@@ -1,0 +1,21 @@
+{
+  "name": "atlas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Atlas — Precision career cartography platform",
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": ["apps/*", "packages/*", "workers/*"],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "db:migrate": "cd packages/database && pnpm migrate",
+    "db:generate-types": "npx supabase gen types typescript --local > apps/web/lib/supabase/types.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  }
+}
