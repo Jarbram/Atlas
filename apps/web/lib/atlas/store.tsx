@@ -41,7 +41,8 @@ function read(): Persisted {
     const p = JSON.parse(raw);
     return {
       vacancies: Array.isArray(p.vacancies) ? p.vacancies : [],
-      profile: p.profile ?? EMPTY_PROFILE,
+      // Merge over EMPTY_PROFILE so a partial/corrupt stored shape can't crash the UI.
+      profile: { ...EMPTY_PROFILE, ...(p.profile ?? {}) },
     };
   } catch {
     return fresh;
@@ -49,6 +50,7 @@ function read(): Persisted {
 }
 
 interface DeckValue extends Persisted {
+  hydrated: boolean;
   get: (id: string | null | undefined) => Vacancy | undefined;
   adaptFromRaw: (raw: string) => Promise<Vacancy>;
   updateVacancy: (id: string, patch: Partial<Vacancy>) => void;
@@ -155,6 +157,7 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
       id ? state.vacancies.find((v) => v.id === id) : undefined;
     return {
       ...state,
+      hydrated,
       get,
       updateVacancy,
       setProfile,
@@ -188,7 +191,7 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
       removeVacancy: (id: string) =>
         setState((s) => ({ ...s, vacancies: s.vacancies.filter((v) => v.id !== id) })),
     };
-  }, [state, updateVacancy, setProfile, resetProfile, parseAndSetProfile]);
+  }, [state, hydrated, updateVacancy, setProfile, resetProfile, parseAndSetProfile]);
 
   return <DeckCtx.Provider value={value}>{children}</DeckCtx.Provider>;
 }

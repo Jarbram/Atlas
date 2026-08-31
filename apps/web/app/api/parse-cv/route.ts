@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { extractText } from "unpdf";
+import { guard } from "@/lib/api-guard";
 import { parseCVWithDeepSeek, hasDeepSeek } from "@/lib/ai/deepseek";
 import { parseCVHeuristic } from "@/lib/atlas/mock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
 export async function POST(request: Request) {
+  const blocked = await guard(15);
+  if (blocked) return blocked;
+
   try {
     const contentType = request.headers.get("content-type") || "";
     let text = "";
@@ -17,6 +23,12 @@ export async function POST(request: Request) {
       const rawText = formData.get("raw") as string | null;
 
       if (file) {
+        if (file.size > MAX_FILE_BYTES) {
+          return NextResponse.json(
+            { error: "El archivo supera el límite de 5 MB." },
+            { status: 413 },
+          );
+        }
         const bytes = await file.arrayBuffer();
         if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
           const uint8 = new Uint8Array(bytes);

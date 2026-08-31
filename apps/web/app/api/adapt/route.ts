@@ -1,42 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { guard } from "@/lib/api-guard";
 import { adaptCV, Profile } from "@/lib/atlas/mock";
 import { adaptWithDeepSeek, hasDeepSeek } from "@/lib/ai/deepseek";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// ponytail: in-memory per-user limiter, resets on redeploy. Swap for Redis/Upstash when it matters.
-const hits = new Map<string, { n: number; resetAt: number }>();
-const LIMIT = 20;
-const WINDOW = 60 * 60 * 1000;
-
-function overLimit(userId: string) {
-  const now = Date.now();
-  const e = hits.get(userId);
-  if (!e || now > e.resetAt) {
-    hits.set(userId, { n: 1, resetAt: now + WINDOW });
-    return false;
-  }
-  if (e.n >= LIMIT) return true;
-  e.n += 1;
-  return false;
-}
-
 export async function POST(request: Request) {
-  // Auth gate is active once Supabase is configured; skipped locally otherwise.
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    if (overLimit(user.id)) {
-      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
-    }
-  }
+  const blocked = await guard(20);
+  if (blocked) return blocked;
 
   let body: { raw?: string; profile?: Profile };
   try {

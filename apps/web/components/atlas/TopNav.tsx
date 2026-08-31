@@ -7,7 +7,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { Plus, ChevronDown, Menu, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { MODULES } from "@/lib/atlas/mock";
-import { useToast } from "@/lib/atlas/store";
 import { createClient } from "@/lib/supabase/client";
 import { CompassRose } from "./CompassRose";
 
@@ -20,7 +19,6 @@ interface NavUser {
 export function TopNav({ onOpenPalette }: { onOpenPalette: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState<NavUser | null>(null);
@@ -132,24 +130,6 @@ export function TopNav({ onOpenPalette }: { onOpenPalette: () => void }) {
                       <p className="truncate text-[11px] text-ink-lo">{user.email}</p>
                     </div>
                   )}
-                  <button
-                    onClick={() => {
-                      setProfileOpen(false);
-                      router.push("/perfil");
-                    }}
-                    className="block w-full px-3.5 py-2 text-left text-[13px] text-ink-mid hover:bg-[rgba(255,235,190,0.05)] hover:text-ink-hi"
-                  >
-                    Editar perfil
-                  </button>
-                  <button
-                    onClick={() => {
-                      setProfileOpen(false);
-                      toast("Ajustes — próximamente");
-                    }}
-                    className="block w-full px-3.5 py-2 text-left text-[13px] text-ink-mid hover:bg-[rgba(255,235,190,0.05)] hover:text-ink-hi"
-                  >
-                    Ajustes de cuenta
-                  </button>
                   <button
                     onClick={() => {
                       setProfileOpen(false);

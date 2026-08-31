@@ -243,10 +243,15 @@ function isKnown(term: string, skillsLc: Set<string>): boolean {
   return false;
 }
 
+const reEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Word-boundary match so "Go" doesn't hit "Django" and "Java" doesn't hit "JavaScript".
+// Alphanumerics are boundaries; +/#/. stay inside tokens (C++, C#, Node.js).
+const mentions = (raw: string, term: string) =>
+  new RegExp(`(?<![a-z0-9])${reEscape(term)}(?![a-z0-9])`, "i").test(raw);
+
 export function analyzeVacancy(raw: string, skills: string[]) {
-  const hay = ` ${raw.toLowerCase()} `;
   const skillsLc = new Set(skills.map((s) => s.toLowerCase()));
-  const detected = TECH_DICT.filter((t) => hay.includes(t.toLowerCase()));
+  const detected = TECH_DICT.filter((t) => mentions(raw, t));
   return {
     detected,
     matched: detected.filter((t) => isKnown(t, skillsLc)),
@@ -372,7 +377,7 @@ export function parseCVHeuristic(text: string): Profile {
   const name = lines[0] || "Nombre por definir";
   const title = lines[1] && lines[1].length < 80 ? lines[1] : "Profesional";
 
-  const detectedTech = TECH_DICT.filter((t) => text.toLowerCase().includes(t.toLowerCase()));
+  const detectedTech = TECH_DICT.filter((t) => mentions(text, t));
 
   return {
     name,

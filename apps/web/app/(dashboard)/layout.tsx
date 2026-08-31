@@ -8,16 +8,19 @@ import { CommandPalette } from "@/components/atlas/CommandPalette";
 import { isProfileEmpty } from "@/lib/atlas/mock";
 
 function OnboardingGuard({ children }: { children: React.ReactNode }) {
-  const { profile } = useDeck();
+  const { profile, hydrated } = useDeck();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    // If user has an empty profile (new account), direct them to /perfil first to upload CV
+    // Wait for localStorage to load — before that `profile` is always empty and
+    // would bounce returning users to /perfil on every visit.
+    if (!hydrated) return;
+    // New account with no profile yet → send to /perfil to upload a CV first.
     if (isProfileEmpty(profile) && pathname !== "/perfil") {
       router.replace("/perfil");
     }
-  }, [profile, pathname, router]);
+  }, [hydrated, profile, pathname, router]);
 
   return <>{children}</>;
 }
