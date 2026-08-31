@@ -367,17 +367,12 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
     try {
       const { downloadCvPdf } = await import("@/lib/atlas/cv-pdf");
       await downloadCvPdf(name, body);
-      toast("CV descargado", "ok");
+      toast("CV descargado en PDF", "ok");
     } catch (err) {
-      console.error("[cv-pdf] generation failed, falling back to .txt:", err);
-      const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${name}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast("PDF no disponible — descargado como texto");
+      console.error("[cv-pdf] @react-pdf failed, falling back to print:", err);
+      const { printCvPdf } = await import("@/lib/atlas/cv-print");
+      printCvPdf(name, body);
+      toast("Abriendo diálogo — elige 'Guardar como PDF'");
     } finally {
       setPdfBusy(false);
     }

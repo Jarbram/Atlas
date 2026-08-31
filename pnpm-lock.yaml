@@ -39,8 +39,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.23(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-pdf/renderer':
-        specifier: ^3.4.0
-        version: 3.4.5(react@18.3.1)
+        specifier: ^4.9.0
+        version: 4.9.0(react@18.3.1)
       '@supabase/ssr':
         specifier: ^0.5.0
         version: 0.5.2(@supabase/supabase-js@2.112.4)
@@ -826,52 +826,48 @@ packages:
   '@radix-ui/rect@1.1.3':
     resolution: {integrity: sha512-JtyZR+mqgBibTo8xea3B6ZRmzZiM/YeVBtUkas6zMuXjAlfIFIW2FgqeM9eLyvEaYX66vr6DJMK+4U6LV0KhNw==}
 
-  '@react-pdf/fns@2.2.1':
-    resolution: {integrity: sha512-s78aDg0vDYaijU5lLOCsUD+qinQbfOvcNeaoX9AiE7+kZzzCo6B/nX+l48cmt9OosJmvZvE9DWR9cLhrhOi2pA==}
-
   '@react-pdf/fns@3.1.3':
     resolution: {integrity: sha512-0I7pApDr1/RLAKbizuLy/IHTEa93LSPy/bEwYniboC3Xqnp6Od8xFJKbKEzGw2wh/5zKFFwl00g4t9RwgIMc3w==}
-
-  '@react-pdf/font@2.5.2':
-    resolution: {integrity: sha512-Ud0EfZ2FwrbvwAWx8nz+KKLmiqACCH9a/N/xNDOja0e/YgSnqTpuyHegFBgIMKjuBtO5dNvkb4dXkxAhGe/ayw==}
 
   '@react-pdf/font@4.1.2':
     resolution: {integrity: sha512-RT/jiGWIRjIC9c4S9NiqhEyfuA6YL+DtWL3Rm+k+zQhfeHYvHwGzFxr7ZJzThIMrT8sIQy+mpvFvfYyitEei/Q==}
 
-  '@react-pdf/image@2.3.6':
-    resolution: {integrity: sha512-7iZDYZrZlJqNzS6huNl2XdMcLFUo68e6mOdzQeJ63d5eApdthhSHBnkGzHfLhH5t8DCpZNtClmklzuLL63ADfw==}
+  '@react-pdf/hyphenate@0.1.0':
+    resolution: {integrity: sha512-CWulbuusHh2Lnos9ZffT3ZYfjCt332Yl8wjSyCKWbwhbTpe/VdFt53fM5elPp3HU3R6tzH6j3oYlLXDwC2WEHQ==}
 
-  '@react-pdf/layout@3.13.0':
-    resolution: {integrity: sha512-lpPj/EJYHFOc0ALiJwLP09H28B4ADyvTjxOf67xTF+qkWd+dq1vg7dw3wnYESPnWk5T9NN+HlUenJqdYEY9AvA==}
+  '@react-pdf/image@3.1.2':
+    resolution: {integrity: sha512-89vlvZCCv1hPunFtyeS2rJTRL8h2yYmTI97AM4ppibS79zGsPFbqz/YrAunndcHB9uwGdn5S3+5k18mj0L2vkg==}
 
-  '@react-pdf/pdfkit@3.2.0':
-    resolution: {integrity: sha512-OBfCcnTC6RpD9uv9L2woF60Zj1uQxhLFzTBXTdcYE9URzPE/zqXIyzpXEA4Vf3TFbvBCgFE2RzJ2ZUS0asq7yA==}
+  '@react-pdf/layout@5.2.0':
+    resolution: {integrity: sha512-Hzf9cShT1bKkr9tZ+A9qK/wHqUloOCgbNer72EquQS6QzqVGiDdtt6Wh9lQXwkd89U7yZolTLnFqP/dRdoRROw==}
 
-  '@react-pdf/png-js@2.3.1':
-    resolution: {integrity: sha512-pEZ18I4t1vAUS4lmhvXPmXYP4PHeblpWP/pAlMMRkEyP7tdAeHUN7taQl9sf9OPq7YITMY3lWpYpJU6t4CZgZg==}
-
-  '@react-pdf/primitives@3.1.1':
-    resolution: {integrity: sha512-miwjxLwTnO3IjoqkTVeTI+9CdyDggwekmSLhVCw+a/7FoQc+gF3J2dSKwsHvAcVFM0gvU8mzCeTofgw0zPDq0w==}
+  '@react-pdf/paginate@1.0.1':
+    resolution: {integrity: sha512-JN6teDqkdpkcRhdGZqyrr7Y8flgTtyI8XS3yaBQLyiGjEBPbR9m/19cz2z3JkqYpApau5pEHZlLjwGqMurWysw==}
 
   '@react-pdf/primitives@4.4.0':
     resolution: {integrity: sha512-BFpuhNH6ffSFjTTMnpdUoZxWoXdhPmFDdrSVBl0i/zMR4yDTEfYOW3AcfjjmNIOpm9+LnIXbgELLklQJ+nD3oA==}
 
-  '@react-pdf/render@3.5.0':
-    resolution: {integrity: sha512-gFOpnyqCgJ6l7VzfJz6rG1i2S7iVSD8bUHDjPW9Mze8TmyksHzN2zBH3y7NbsQOw1wU6hN4NhRmslrsn+BRDPA==}
-
-  '@react-pdf/renderer@3.4.5':
-    resolution: {integrity: sha512-O1N8q45bTs7YuC+x9afJSKQWDYQy2RjoCxlxEGdbCwP+WD5G6dWRUWXlc8F0TtzU3uFglYMmDab2YhXTmnVN9g==}
+  '@react-pdf/reconciler@2.0.0':
+    resolution: {integrity: sha512-7zaPRujpbHSmCpIrZ+b9HSTJHthcVZzX0Wx7RzvQGsGBUbHP4p6s5itXrAIOuQuPvDepoHGNOvf6xUuMVvdoyw==}
     peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  '@react-pdf/stylesheet@4.3.0':
-    resolution: {integrity: sha512-x7IVZOqRrUum9quuDeFXBveXwBht+z/6B0M+z4a4XjfSg1vZVvzoTl07Oa1yvQ/4yIC5yIkG2TSMWeKnDB+hrw==}
+  '@react-pdf/render@4.7.0':
+    resolution: {integrity: sha512-UEMgR7gBmCJiKpuu9alY6QeZVNB+7b4DGHc7Hi8QIl+5PfHvyq+TV70N7+ngZ6wN7hF3XSiWz7GDuYxPIx5eRw==}
+
+  '@react-pdf/renderer@4.9.0':
+    resolution: {integrity: sha512-RAbARMwjcSYEpqpaWoWXz0uOGF1HjAl5hdJr889r5mgkPhF9xhX4CXSvcEbLTgFVj+KWbcar31MzcXYoANk/Ag==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@react-pdf/stylesheet@6.3.2':
     resolution: {integrity: sha512-UR247sNBx2k3RdL8JUCpUiyx39yQsUABagv3uAi91iMZCORE+fSCsOh7MOcEImmpms4GihydLGudbngI5g14PA==}
 
-  '@react-pdf/textkit@4.4.1':
-    resolution: {integrity: sha512-Jl9wdTqIvJ5pX+vAGz0EOhP7ut5Two9H6CzTKo/YYPeD79cM2yTXF3JzTERBC28y7LR0Waq9D2LHQjI+b/EYUQ==}
+  '@react-pdf/svg@1.1.1':
+    resolution: {integrity: sha512-m1GmGxV2wg/3VpoQ0aCJ598fBedCCfN+HtxKx1lq5kdwUWEaTbfXI1DGFAUedprFDd/i24okKFaUhV/KVZIqIQ==}
+
+  '@react-pdf/textkit@7.0.1':
+    resolution: {integrity: sha512-ljY/YoEETIOR/+zxWdLLmKlupz8/nBsbmxglM3mDRco62UEzEPnIeMEzYVVVraovCAJC2t+50gKFNSV17FYxbw==}
 
   '@react-pdf/types@2.14.0':
     resolution: {integrity: sha512-TYHpThdf2sz/d1g+CP9nWjYCJ8BYBUN5ORL6+60A85Js9S/YouK8OXzi+hDpYUSZJTOdYXdRxUNeG2oW8//Ulg==}
@@ -1060,9 +1056,6 @@ packages:
   brotli@1.3.3:
     resolution: {integrity: sha512-oTKjJdShmDuGW94SyyaoQvAjf30dZaHnjJ8uAF+u2/vGJkJbJPJAT1gDiOJP5v1Zb6f9KEyW/1HpuaWIXtGHPg==}
 
-  browserify-zlib@0.2.0:
-    resolution: {integrity: sha512-Z942RysHXmJrhqk88FmKBVq/v5tqmSkDz7p54G/MGyjMnCFFnC79XWNbg+Vta8W6Wb2qtSZTSxIGkJrRpCFEiA==}
-
   browserslist@4.28.8:
     resolution: {integrity: sha512-V2NpofLblG64mfOtSgDhOJESZEGogzDMBv/q+W6oc4LXWP/q75eOXoOaaOu1EOadB9U4Bwx/e0yzbvwKH8zalA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
@@ -1110,15 +1103,9 @@ packages:
     resolution: {integrity: sha512-rwHwUfXL40Chm1r08yrhU3qpUvdVlgkKNeyeGPOxnW8/SyVDvgRaed/Uz54AqWNaTCAThlj6QAs3TZcKI0xDEw==}
     engines: {node: '>=0.10.0'}
 
-  color-name@1.1.4:
-    resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
-
   color-name@2.1.1:
     resolution: {integrity: sha512-p2FdgwVx1a9yWBHP2wI0VgShkDpgN4kZISkxdNipGBJWpa5G6b04OINlVWCyJj0JmfvcPrgqt95E9k8yvaOJFg==}
     engines: {node: '>=12.20'}
-
-  color-string@1.9.1:
-    resolution: {integrity: sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==}
 
   color-string@2.1.4:
     resolution: {integrity: sha512-Bb6Cq8oq0IjDOe8wJmi4JeNn763Xs9cfrBcaylK1tPypWzyoy2G3l90v9k64kjphl/ZJjPIShFztenRomi8WTg==}
@@ -1140,13 +1127,6 @@ packages:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
     deprecated: v4 is no longer maintained, upgrade to v5
-
-  cross-fetch@3.2.0:
-    resolution: {integrity: sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==}
-
-  crypto-js@4.2.0:
-    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
-    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -1249,8 +1229,8 @@ packages:
   electron-to-chromium@1.5.416:
     resolution: {integrity: sha512-K6bvB2BjnNrugtIih6ewlbBI9DXa976jIdiIlRLHhBoEI9a4JaQjjHyF+A1IQI543aQYR4LnmOrT/K5fZj0aPA==}
 
-  emoji-regex@10.6.0:
-    resolution: {integrity: sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==}
+  emoji-regex-xs@1.0.0:
+    resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
 
   es-define-property@1.0.1:
     resolution: {integrity: sha512-e3nRfgfUZ4rNGL232gUgX06QNyyez04KdjFrF+LTRoOXmrOgFKDg4BCdsjW8EnT69eqdYGmRpJwiPVYNrCaW3g==}
@@ -1383,8 +1363,8 @@ packages:
   humanize-ms@1.2.1:
     resolution: {integrity: sha512-Fl70vYtsAFb/C06PTS9dZBo7ihau+Tu/DNCk/OyHhea07S+aeMWpFFkUaXRa8fI+ScZbEI8dfSxwY7gxZ9SAVQ==}
 
-  hyphen@1.14.1:
-    resolution: {integrity: sha512-kvL8xYl5QMTh+LwohVN72ciOxC0OEV79IPdJSTwEXok9y9QHebXGdFgrED4sWfiax/ODx++CAMk3hMy4XPJPOw==}
+  hyphen@1.6.6:
+    resolution: {integrity: sha512-XtqmnT+b9n5MX+MsqluFAVTIenbtC25iskW0Z+jLd+awfhA+ZbWKWQMIvLJccGoa2bM1R6juWJ27cZxIFOmkWw==}
 
   iceberg-js@0.8.1:
     resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
@@ -1400,9 +1380,6 @@ packages:
   ioredis@5.11.1:
     resolution: {integrity: sha512-ehuGcf94bQXhfagULNXrJdfnWO38v070jxSx/qE87Kjzmu2fU7ro5EFAb+OPituLqgfyuQaym5DlrNydW2sJ9A==}
     engines: {node: '>=12.22.0'}
-
-  is-arrayish@0.3.4:
-    resolution: {integrity: sha512-m6UrgzFVUYawGBh1dUsWR5M2Clqic9RVXC/9f8ceNlv2IcO9j9J/z8UoCLPqtsPBFNzEpfR3xftohbfqDx8EQA==}
 
   is-binary-path@2.1.0:
     resolution: {integrity: sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==}
@@ -1466,9 +1443,6 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
-
-  media-engine@1.0.3:
-    resolution: {integrity: sha512-aa5tG6sDoK+k70B9iEX1NeyfT8ObCKhNDs6lJVpwF6r8vhUfuKMslIcirq6HIUYuuUYLefcEQOn9bSBOvawtwg==}
 
   media-engine@2.0.0:
     resolution: {integrity: sha512-FqNmlXKYrp5d3g7xEOMJb+6gXZE0fTssdyIQqYR4LbkifbNbS0hDylhNDOh8r6tCgLboHd8+mwgH2njgSYDpnQ==}
@@ -1582,9 +1556,6 @@ packages:
 
   pako@0.2.9:
     resolution: {integrity: sha512-NUcwaKxUxWrZLpDG+z/xZaCgQITkA/Dv4V/T6bw7VON6l1Xz/VnrBqrYjZQ12TamKHzITTfOEIYUj48y2KXImA==}
-
-  pako@1.0.11:
-    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
 
   parse-svg-path@0.1.2:
     resolution: {integrity: sha512-JyPSBnkTJ0AI8GGJLfMXvKq42cj5c006fnLz6fXy6zfoVjJizi8BNTpu8on8ziI1cKy9d9DGNuY17Ce7wuejpQ==}
@@ -1775,14 +1746,11 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  safe-buffer@5.2.1:
-    resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
-
-  scheduler@0.17.0:
-    resolution: {integrity: sha512-7rro8Io3tnCPuY4la/NuI5F2yfESpnfZyT6TtkXnSWVkcu0BCDJ+8gk5ozUaFaxpIyNuWAPXrH0yFcSi28fnDA==}
-
   scheduler@0.23.2:
     resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
+
+  scheduler@0.25.0-rc-603e6108-20241029:
+    resolution: {integrity: sha512-pFwF6H1XrSdYYNLfOcGlM28/j8CGLu8IvdrxqhjWULe2bPcKiKW4CV+OWqR/9fT52mywx65l7ysNkjLKBda7eA==}
 
   semver@7.8.5:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
@@ -1798,18 +1766,12 @@ packages:
       '@types/node':
         optional: true
 
-  simple-swizzle@0.2.4:
-    resolution: {integrity: sha512-nAu1WFPQSMNr2Zn9PGSZK9AGn4t/y97lEm+MXTtUDwfP0ksAIX4nO+6ruD9Jwut4C49SB1Ws+fbXsm/yScWOHw==}
-
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
   standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
-
-  string_decoder@1.3.0:
-    resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
 
   styled-jsx@5.1.6:
     resolution: {integrity: sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==}
@@ -1944,10 +1906,6 @@ packages:
   victory-vendor@36.9.2:
     resolution: {integrity: sha512-PnpQQMuxlwYdocC8fIJqVXvkeViHYzotI+NJrCuav0ZYFoq912ZHBk3mCeuj+5/VpodOjPe1z0Fk2ihgzlXqjQ==}
 
-  vite-compatible-readable-stream@3.6.1:
-    resolution: {integrity: sha512-t20zYkrSf868+j/p31cRIGN28Phrjm3nRSLR2fyc2tiWi4cZGVdv68yNlwnIINTkMTmPoMiSlc0OadaO7DXZaQ==}
-    engines: {node: '>= 6'}
-
   web-streams-polyfill@4.0.0-beta.3:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
     engines: {node: '>= 14'}
@@ -1958,8 +1916,8 @@ packages:
   whatwg-url@5.0.0:
     resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
 
-  yoga-layout@2.0.1:
-    resolution: {integrity: sha512-tT/oChyDXelLo2A+UVnlW9GU7CsvFMaEnd9kVFsaiCQonFAXd3xrHhkLYu+suwwosrAEQ746xBU+HvYtm1Zs2Q==}
+  yoga-layout@3.2.1:
+    resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
@@ -2576,21 +2534,7 @@ snapshots:
 
   '@radix-ui/rect@1.1.3': {}
 
-  '@react-pdf/fns@2.2.1':
-    dependencies:
-      '@babel/runtime': 7.29.7
-
   '@react-pdf/fns@3.1.3': {}
-
-  '@react-pdf/font@2.5.2':
-    dependencies:
-      '@babel/runtime': 7.29.7
-      '@react-pdf/types': 2.14.0
-      cross-fetch: 3.2.0
-      fontkit: 2.0.4
-      is-url: 1.2.4
-    transitivePeerDependencies:
-      - encoding
 
   '@react-pdf/font@4.1.2':
     dependencies:
@@ -2599,90 +2543,68 @@ snapshots:
       is-url: 1.2.4
       pdfkit: 0.20.1
 
-  '@react-pdf/image@2.3.6':
+  '@react-pdf/hyphenate@0.1.0':
     dependencies:
-      '@babel/runtime': 7.29.7
-      '@react-pdf/png-js': 2.3.1
-      cross-fetch: 3.2.0
-      jay-peg: 1.1.1
-    transitivePeerDependencies:
-      - encoding
+      hyphen: 1.6.6
 
-  '@react-pdf/layout@3.13.0':
+  '@react-pdf/image@3.1.2':
     dependencies:
-      '@babel/runtime': 7.29.7
-      '@react-pdf/fns': 2.2.1
-      '@react-pdf/image': 2.3.6
-      '@react-pdf/pdfkit': 3.2.0
-      '@react-pdf/primitives': 3.1.1
-      '@react-pdf/stylesheet': 4.3.0
-      '@react-pdf/textkit': 4.4.1
+      '@react-pdf/svg': 1.1.1
+      jay-peg: 1.1.1
+      png-js: 2.0.0
+
+  '@react-pdf/layout@5.2.0':
+    dependencies:
+      '@react-pdf/fns': 3.1.3
+      '@react-pdf/image': 3.1.2
+      '@react-pdf/paginate': 1.0.1
+      '@react-pdf/primitives': 4.4.0
+      '@react-pdf/stylesheet': 6.3.2
+      '@react-pdf/textkit': 7.0.1
       '@react-pdf/types': 2.14.0
-      cross-fetch: 3.2.0
-      emoji-regex: 10.6.0
+      emoji-regex-xs: 1.0.0
       queue: 6.0.2
-      yoga-layout: 2.0.1
-    transitivePeerDependencies:
-      - encoding
+      yoga-layout: 3.2.1
 
-  '@react-pdf/pdfkit@3.2.0':
-    dependencies:
-      '@babel/runtime': 7.29.7
-      '@react-pdf/png-js': 2.3.1
-      browserify-zlib: 0.2.0
-      crypto-js: 4.2.0
-      fontkit: 2.0.4
-      jay-peg: 1.1.1
-      vite-compatible-readable-stream: 3.6.1
-
-  '@react-pdf/png-js@2.3.1':
-    dependencies:
-      browserify-zlib: 0.2.0
-
-  '@react-pdf/primitives@3.1.1': {}
+  '@react-pdf/paginate@1.0.1': {}
 
   '@react-pdf/primitives@4.4.0': {}
 
-  '@react-pdf/render@3.5.0':
+  '@react-pdf/reconciler@2.0.0(react@18.3.1)':
+    dependencies:
+      object-assign: 4.1.1
+      react: 18.3.1
+      scheduler: 0.25.0-rc-603e6108-20241029
+
+  '@react-pdf/render@4.7.0':
     dependencies:
       '@babel/runtime': 7.29.7
-      '@react-pdf/fns': 2.2.1
-      '@react-pdf/primitives': 3.1.1
-      '@react-pdf/textkit': 4.4.1
+      '@react-pdf/fns': 3.1.3
+      '@react-pdf/primitives': 4.4.0
+      '@react-pdf/textkit': 7.0.1
       '@react-pdf/types': 2.14.0
       abs-svg-path: 0.1.1
-      color-string: 1.9.1
+      color-string: 2.1.4
       normalize-svg-path: 1.1.0
       parse-svg-path: 0.1.2
       svg-arc-to-cubic-bezier: 3.2.0
 
-  '@react-pdf/renderer@3.4.5(react@18.3.1)':
+  '@react-pdf/renderer@4.9.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
-      '@react-pdf/font': 2.5.2
-      '@react-pdf/layout': 3.13.0
-      '@react-pdf/pdfkit': 3.2.0
-      '@react-pdf/primitives': 3.1.1
-      '@react-pdf/render': 3.5.0
+      '@react-pdf/fns': 3.1.3
+      '@react-pdf/font': 4.1.2
+      '@react-pdf/layout': 5.2.0
+      '@react-pdf/primitives': 4.4.0
+      '@react-pdf/reconciler': 2.0.0(react@18.3.1)
+      '@react-pdf/render': 4.7.0
       '@react-pdf/types': 2.14.0
       events: 3.3.0
       object-assign: 4.1.1
+      pdfkit: 0.20.1
       prop-types: 15.8.1
       queue: 6.0.2
       react: 18.3.1
-      scheduler: 0.17.0
-    transitivePeerDependencies:
-      - encoding
-
-  '@react-pdf/stylesheet@4.3.0':
-    dependencies:
-      '@babel/runtime': 7.29.7
-      '@react-pdf/fns': 2.2.1
-      '@react-pdf/types': 2.14.0
-      color-string: 1.9.1
-      hsl-to-hex: 1.0.0
-      media-engine: 1.0.3
-      postcss-value-parser: 4.2.0
 
   '@react-pdf/stylesheet@6.3.2':
     dependencies:
@@ -2693,12 +2615,15 @@ snapshots:
       media-engine: 2.0.0
       postcss-value-parser: 4.2.0
 
-  '@react-pdf/textkit@4.4.1':
+  '@react-pdf/svg@1.1.1':
     dependencies:
-      '@babel/runtime': 7.29.7
-      '@react-pdf/fns': 2.2.1
+      '@react-pdf/primitives': 4.4.0
+
+  '@react-pdf/textkit@7.0.1':
+    dependencies:
+      '@react-pdf/fns': 3.1.3
+      '@react-pdf/hyphenate': 0.1.0
       bidi-js: 1.0.3
-      hyphen: 1.14.1
       unicode-properties: 1.4.1
 
   '@react-pdf/types@2.14.0':
@@ -2875,10 +2800,6 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
 
-  browserify-zlib@0.2.0:
-    dependencies:
-      pako: 1.0.11
-
   browserslist@4.28.8:
     dependencies:
       baseline-browser-mapping: 2.11.20
@@ -2931,14 +2852,7 @@ snapshots:
 
   cluster-key-slot@1.1.1: {}
 
-  color-name@1.1.4: {}
-
   color-name@2.1.1: {}
-
-  color-string@1.9.1:
-    dependencies:
-      color-name: 1.1.4
-      simple-swizzle: 0.2.4
 
   color-string@2.1.4:
     dependencies:
@@ -2955,14 +2869,6 @@ snapshots:
   cron-parser@4.9.0:
     dependencies:
       luxon: 3.7.2
-
-  cross-fetch@3.2.0:
-    dependencies:
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
-
-  crypto-js@4.2.0: {}
 
   cssesc@3.0.0: {}
 
@@ -3042,7 +2948,7 @@ snapshots:
 
   electron-to-chromium@1.5.416: {}
 
-  emoji-regex@10.6.0: {}
+  emoji-regex-xs@1.0.0: {}
 
   es-define-property@1.0.1: {}
 
@@ -3177,7 +3083,7 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  hyphen@1.14.1: {}
+  hyphen@1.6.6: {}
 
   iceberg-js@0.8.1: {}
 
@@ -3196,8 +3102,6 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
-
-  is-arrayish@0.3.4: {}
 
   is-binary-path@2.1.0:
     dependencies:
@@ -3247,8 +3151,6 @@ snapshots:
   luxon@3.7.2: {}
 
   math-intrinsics@1.1.0: {}
-
-  media-engine@1.0.3: {}
 
   media-engine@2.0.0: {}
 
@@ -3355,8 +3257,6 @@ snapshots:
       - encoding
 
   pako@0.2.9: {}
-
-  pako@1.0.11: {}
 
   parse-svg-path@0.1.2: {}
 
@@ -3542,16 +3442,11 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  safe-buffer@5.2.1: {}
-
-  scheduler@0.17.0:
-    dependencies:
-      loose-envify: 1.4.0
-      object-assign: 4.1.1
-
   scheduler@0.23.2:
     dependencies:
       loose-envify: 1.4.0
+
+  scheduler@0.25.0-rc-603e6108-20241029: {}
 
   semver@7.8.5: {}
 
@@ -3589,17 +3484,9 @@ snapshots:
       '@types/node': 20.19.43
     optional: true
 
-  simple-swizzle@0.2.4:
-    dependencies:
-      is-arrayish: 0.3.4
-
   source-map-js@1.2.1: {}
 
   standard-as-callback@2.1.0: {}
-
-  string_decoder@1.3.0:
-    dependencies:
-      safe-buffer: 5.2.1
 
   styled-jsx@5.1.6(react@18.3.1):
     dependencies:
@@ -3752,12 +3639,6 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
-  vite-compatible-readable-stream@3.6.1:
-    dependencies:
-      inherits: 2.0.4
-      string_decoder: 1.3.0
-      util-deprecate: 1.0.2
-
   web-streams-polyfill@4.0.0-beta.3: {}
 
   webidl-conversions@3.0.1: {}
@@ -3767,6 +3648,6 @@ snapshots:
       tr46: 0.0.3
       webidl-conversions: 3.0.1
 
-  yoga-layout@2.0.1: {}
+  yoga-layout@3.2.1: {}
 
   zod@3.25.76: {}
