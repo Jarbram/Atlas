@@ -32,20 +32,22 @@ interface Persisted {
   profile: Profile;
 }
 
+/** Coerce an arbitrary stored/fetched shape into a safe Persisted. */
+function normalize(p: { vacancies?: unknown; profile?: unknown } | null | undefined): Persisted {
+  return {
+    vacancies: Array.isArray(p?.vacancies) ? (p!.vacancies as Vacancy[]) : [],
+    // Merge over EMPTY_PROFILE so a partial/corrupt shape can't crash the UI.
+    profile: { ...EMPTY_PROFILE, ...((p?.profile as Partial<Profile>) ?? {}) },
+  };
+}
+
 function read(): Persisted {
-  const fresh: Persisted = { vacancies: [], profile: EMPTY_PROFILE };
-  if (typeof window === "undefined") return fresh;
+  if (typeof window === "undefined") return { vacancies: [], profile: EMPTY_PROFILE };
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return fresh;
-    const p = JSON.parse(raw);
-    return {
-      vacancies: Array.isArray(p.vacancies) ? p.vacancies : [],
-      // Merge over EMPTY_PROFILE so a partial/corrupt stored shape can't crash the UI.
-      profile: { ...EMPTY_PROFILE, ...(p.profile ?? {}) },
-    };
+    return raw ? normalize(JSON.parse(raw)) : { vacancies: [], profile: EMPTY_PROFILE };
   } catch {
-    return fresh;
+    return { vacancies: [], profile: EMPTY_PROFILE };
   }
 }
 
@@ -83,33 +85,52 @@ const DeckCtx = createContext<DeckValue | null>(null);
 export function DeckProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<Persisted>({ vacancies: [], profile: EMPTY_PROFILE });
   const [hydrated, setHydrated] = useState(false);
+  // Supabase user id once known — gates the cloud sync. Null = anon, local-only.
+  const uidRef = React.useRef<string | null>(null);
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const loaded = read();
-    setState(loaded);
-    setHydrated(true);
+    let cancelled = false;
 
-    // If logged in via Supabase, prefill email/name if profile is completely empty
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
-        const u = data?.user;
-        if (!u) return;
-        setState((prev) => {
-          if (!prev.profile.name && !prev.profile.email) {
-            return {
-              ...prev,
-              profile: {
-                ...prev.profile,
-                name: (u.user_metadata?.full_name as string) || "",
-                email: u.email || "",
-              },
+    (async () => {
+      let next = read();
+
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        const supabase = createClient();
+        const { data: auth } = await supabase.auth.getUser();
+        const user = auth?.user;
+        if (user) {
+          uidRef.current = user.id;
+          const { data: row } = await supabase
+            .from("atlas_state")
+            .select("data")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          // ponytail: account is source of truth on login — the remote blob wins
+          //           whole, no field-level merge. Add a CRDT only if concurrent
+          //           multi-device edits become a real complaint.
+          if (row?.data) {
+            next = normalize(row.data as Persisted);
+          } else if (!next.profile.name && !next.profile.email) {
+            next.profile = {
+              ...next.profile,
+              name: (user.user_metadata?.full_name as string) || "",
+              email: user.email || "",
             };
           }
-          return prev;
-        });
-      });
-    }
+        }
+      }
+
+      if (!cancelled) {
+        setState(next);
+        setHydrated(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -119,6 +140,20 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* private mode / quota */
     }
+
+    // Debounced push to Supabase so a burst of edits is one round-trip.
+    if (!uidRef.current || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from("atlas_state")
+          .upsert({ user_id: uidRef.current, data: state, updated_at: new Date().toISOString() });
+      } catch {
+        /* offline — localStorage still holds it, next edit retries */
+      }
+    }, 800);
   }, [state, hydrated]);
 
   const updateVacancy = useCallback(
@@ -139,6 +174,14 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
     try {
       window.localStorage.removeItem(KEY);
     } catch {}
+    if (uidRef.current && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const supabase = createClient();
+      supabase
+        .from("atlas_state")
+        .delete()
+        .eq("user_id", uidRef.current)
+        .then(undefined, () => {});
+    }
   }, []);
 
   const parseAndSetProfile = useCallback(async (fileOrText: File | string): Promise<Profile> => {
