@@ -395,16 +395,11 @@ export default function PerfilPage() {
                       <input className={inputCls} value={g.group} placeholder="Nombre de categoría" onChange={(e) => patchArr(draft, set, "skills", i, { group: e.target.value })} />
                       <RmBtn onClick={() => set({ skills: draft.skills.filter((x) => x.id !== g.id) })} />
                     </div>
-                    <textarea
-                      className={`${inputCls} mt-2 resize-y`}
-                      rows={3}
-                      value={g.items.join(", ")}
-                      onChange={(e) =>
-                        patchArr(draft, set, "skills", i, {
-                          items: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                        })
-                      }
-                      placeholder="Habilidades separadas por coma"
+                    <TagInput
+                      className="mt-2"
+                      value={g.items}
+                      onChange={(items) => patchArr(draft, set, "skills", i, { items })}
+                      placeholder="Escribe y presiona Enter…"
                     />
                   </div>
                 ) : (
@@ -542,23 +537,26 @@ export default function PerfilPage() {
 
       {/* Floating Save/Cancel bar */}
       {editing && (
-        <div className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-[rgba(255,235,190,0.08)]">
+        <div
+          className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-[rgba(255,235,190,0.08)]"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
-            <span className="flex items-center gap-2 text-[12px] text-ink-lo">
+            <span className="hidden items-center gap-2 text-[12px] text-ink-lo sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-brass" /> Editando información del perfil
             </span>
-            <div className="flex gap-2">
+            <div className="flex w-full gap-2 sm:w-auto">
               <button
                 onClick={cancel}
-                className="well card-hover flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-medium text-ink-mid hover:text-ink-hi"
+                className="well card-hover flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-ink-mid hover:text-ink-hi"
               >
-                <X className="h-3.5 w-3.5" /> Cancelar
+                <X className="h-4 w-4" /> Cancelar
               </button>
               <button
                 onClick={save}
-                className="flex items-center gap-1.5 rounded-lg bg-brass px-4 py-2 text-[12px] font-semibold text-[#1a1305] hover:bg-brass-soft"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brass px-5 py-2.5 text-[13px] font-semibold text-[#1a1305] hover:bg-brass-soft sm:flex-none"
               >
-                <Check className="h-3.5 w-3.5" /> Guardar cambios
+                <Check className="h-4 w-4" /> Guardar cambios
               </button>
             </div>
           </div>
@@ -615,6 +613,59 @@ function AddBtn({ onClick }: { onClick: () => void }) {
     >
       <Plus className="h-3.5 w-3.5" />
     </button>
+  );
+}
+
+function TagInput({
+  value,
+  onChange,
+  placeholder,
+  className = "",
+}: {
+  value: string[];
+  onChange: (items: string[]) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  const commit = (raw: string) => {
+    const tag = raw.trim();
+    if (tag && !value.includes(tag)) onChange([...value, tag]);
+    setDraft("");
+  };
+
+  return (
+    <div className={`well flex flex-wrap items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${className}`}>
+      {value.map((tag, i) => (
+        <span key={tag} className="flex items-center gap-1 rounded-md bg-brass/10 px-2 py-0.5 text-[12px] text-brass-soft">
+          {tag}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((_, vi) => vi !== i))}
+            className="text-brass-soft/70 hover:text-caution"
+            aria-label={`Quitar ${tag}`}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            commit(draft);
+          } else if (e.key === "Backspace" && !draft && value.length > 0) {
+            onChange(value.slice(0, -1));
+          }
+        }}
+        onBlur={() => draft && commit(draft)}
+        placeholder={value.length === 0 ? placeholder : ""}
+        className="min-w-[120px] flex-1 bg-transparent text-[13px] text-ink-hi outline-none placeholder:text-ink-lo"
+      />
+    </div>
   );
 }
 
