@@ -172,6 +172,23 @@ export function TopNav({ onOpenPalette }: { onOpenPalette: () => void }) {
               {m.label}
             </Link>
           ))}
+          <div className="mt-2 border-t border-[rgba(255,235,190,0.07)] pt-2 sm:hidden">
+            {user && (
+              <div className="px-3 py-1.5">
+                <p className="truncate text-[13px] font-medium text-ink-hi">{user.name}</p>
+                <p className="truncate text-[11px] text-ink-lo">{user.email}</p>
+              </div>
+            )}
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                signOut();
+              }}
+              className="block w-full rounded-lg px-3 py-2.5 text-left text-[14px] font-medium text-caution hover:bg-[rgba(255,235,190,0.05)]"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </nav>
       )}
     </header>
