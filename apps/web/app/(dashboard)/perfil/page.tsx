@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -535,33 +536,38 @@ export default function PerfilPage() {
         </div>
       </div>
 
-      {/* Floating Save/Cancel bar */}
-      {editing && (
-        <div
-          className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-[rgba(255,235,190,0.08)]"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
-            <span className="hidden items-center gap-2 text-[12px] text-ink-lo sm:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-brass" /> Editando información del perfil
-            </span>
-            <div className="flex w-full gap-2 sm:w-auto">
-              <button
-                onClick={cancel}
-                className="well card-hover flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-ink-mid hover:text-ink-hi"
-              >
-                <X className="h-4 w-4" /> Cancelar
-              </button>
-              <button
-                onClick={save}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brass px-5 py-2.5 text-[13px] font-semibold text-[#1a1305] hover:bg-brass-soft sm:flex-none"
-              >
-                <Check className="h-4 w-4" /> Guardar cambios
-              </button>
+      {/* Floating Save/Cancel bar — portaled to <body>: a "reveal" ancestor
+          animates `transform`, which makes it a containing block and breaks
+          `position: fixed` (bar was only reachable by scrolling to the end). */}
+      {editing &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="glass-bar fixed inset-x-0 bottom-0 z-30 border-t border-[rgba(255,235,190,0.08)]"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
+              <span className="hidden items-center gap-2 text-[12px] text-ink-lo sm:flex">
+                <span className="h-1.5 w-1.5 rounded-full bg-brass" /> Editando información del perfil
+              </span>
+              <div className="flex w-full gap-2 sm:w-auto">
+                <button
+                  onClick={cancel}
+                  className="well card-hover flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-ink-mid hover:text-ink-hi"
+                >
+                  <X className="h-4 w-4" /> Cancelar
+                </button>
+                <button
+                  onClick={save}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brass px-5 py-2.5 text-[13px] font-semibold text-[#1a1305] hover:bg-brass-soft sm:flex-none"
+                >
+                  <Check className="h-4 w-4" /> Guardar cambios
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
