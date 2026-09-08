@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Atlas — Enviar vacante",
+  "version": "1.0.0",
+  "description": "Captura la vacante de la página actual y la manda a Atlas para adaptar tu CV.",
+  "permissions": ["activeTab", "scripting"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Enviar esta vacante a Atlas" }
+}

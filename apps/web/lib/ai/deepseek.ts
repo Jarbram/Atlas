@@ -30,9 +30,17 @@ Devuelves SOLO un objeto JSON con esta forma exacta:
     }
   ],
   "summaryLine": string,        // UNA frase en español para añadir al resumen, a medida de esta vacante
-  "message": string             // mensaje breve al reclutador en español, primera persona, 110-160 palabras,
+  "message": string,            // mensaje breve al reclutador en español, primera persona, 110-160 palabras,
                                 // usando logros REALES del perfil. Sin inventar datos.
+  "matchPct": number,           // entero 0-100: qué tan bien encaja el PERFIL (ya adaptado) con esta vacante
+  "atsTip": string              // máx 15 palabras: la keyword de la vacante que más conviene sumar o resaltar
 }
+CÓMO ADAPTAR (filtros ATS):
+- Usa la terminología EXACTA de la vacante para describir lo que el candidato YA hizo. Mismo hecho, dicho
+  con la palabra que busca el ATS. Ej: "carga con lector de código de barras" -> "gestión de inventario".
+- Mete las keywords de la vacante que se correspondan con algo real del perfil. Reordena: primero lo que más matchea.
+- Regla dura: cada afirmación del CV adaptado tiene que poder defenderse en una entrevista. No inventes
+  experiencia, empresas, títulos, certificaciones, años, tecnologías ni herramientas que no estén en el perfil.
 Si el PERFIL trae "addedSkills", son habilidades REALES que el candidato añadió con una nota de cómo las usó:
 trátalas como parte del perfil (pueden ir en "matched") e incorpora esa nota al "summaryLine", al "message"
 y a los "tailoredExperiences" de la experiencia donde aplique.
@@ -102,6 +110,8 @@ export async function adaptWithDeepSeek(raw: string, profile: Profile): Promise<
     tailoredExperiences,
     summaryLine: String(parsed.summaryLine || "").trim(),
     message: String(parsed.message || "").trim(),
+    matchPct: Math.max(0, Math.min(100, Math.round(Number(parsed.matchPct)) || 0)),
+    atsTip: String(parsed.atsTip || "").trim().slice(0, 160),
   };
 }
 

@@ -93,6 +93,24 @@ export default function AdaptarPage() {
     return () => window.removeEventListener("popstate", sync);
   }, []);
 
+  // Handoff desde la extensión / bookmarklet: /adaptar#raw=<texto de la vacante>.
+  // El fragmento no viaja al servidor y aguanta varios KB sin límite práctico.
+  useEffect(() => {
+    const h = window.location.hash;
+    if (!h.startsWith("#raw=")) return;
+    try {
+      const text = decodeURIComponent(h.slice(5)).trim();
+      if (text.length >= 40) {
+        setRaw(text);
+        setMode("texto");
+        toast("Vacante recibida desde la extensión — revisa y adapta", "ok");
+      }
+    } catch {
+      /* fragmento malformado — ignorar */
+    }
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, [toast]);
+
   const vacancy = get(vid);
   const chars = raw.trim().length;
 
@@ -348,7 +366,10 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
   const { updateVacancy, markSent, setProfile, readaptVacancy } = useDeck();
   const toast = useToast();
   const exps = useMemo(() => cvExperiences(profile, vacancy), [profile, vacancy]);
-  const calce = useMemo(() => calceScore(vacancy), [vacancy]);
+  const calce = useMemo(
+    () => (typeof vacancy.matchPct === "number" ? vacancy.matchPct : calceScore(vacancy)),
+    [vacancy],
+  );
   const [showRaw, setShowRaw] = useState(false);
   const [gapDraft, setGapDraft] = useState<{ name: string; note: string } | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -437,16 +458,46 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-2xl border border-[rgba(255,235,190,0.08)] bg-chart-surface px-4 py-3">
-          <CalceGauge value={calce} size={52} />
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-lo">Calce</p>
-            <p className="text-[12px] text-ink-mid">
-              {vacancy.matched.length}/{vacancy.matched.length + vacancy.gaps.length} tecnologías
-            </p>
+        <div className="max-w-[280px] rounded-2xl border border-[rgba(255,235,190,0.08)] bg-chart-surface px-4 py-3">
+          <div className="flex items-center gap-2">
+            <CalceGauge value={calce} size={52} />
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-lo">Calce</p>
+              <p className="text-[12px] text-ink-mid">
+                {vacancy.matched.length}/{vacancy.matched.length + vacancy.gaps.length} tecnologías
+              </p>
+            </div>
           </div>
+          {vacancy.atsTip && (
+            <p className="mt-2 border-t border-[rgba(255,235,190,0.08)] pt-2 text-[11px] leading-snug text-ink-mid">
+              <span className="font-mono text-ink-lo">ATS · </span>
+              {vacancy.atsTip}
+            </p>
+          )}
         </div>
       </div>
+
+      {vacancy.hallucinationFlags && vacancy.hallucinationFlags.length > 0 && (
+        <div className="reveal-2 mb-6 rounded-2xl border border-caution/30 bg-caution/10 p-4">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-medium text-caution">
+            <AlertTriangle className="h-4 w-4" /> Revisa antes de enviar
+          </p>
+          <p className="mb-2 text-[12px] text-ink-mid">
+            Estos términos aparecen en el CV adaptado pero no en tu información ni en la vacante.
+            Confírmalos o edítalos: no envíes nada que no puedas defender en una entrevista.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {vacancy.hallucinationFlags.map((t) => (
+              <span
+                key={t}
+                className="rounded-md border border-caution/30 bg-caution/12 px-2.5 py-1 font-mono text-[12px] text-caution"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* analysis */}
       <div className="reveal-2 card mb-6 grid grid-cols-1 gap-x-8 gap-y-5 rounded-2xl p-5 sm:grid-cols-2">

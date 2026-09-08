@@ -130,12 +130,19 @@ export function TopNav({ onOpenPalette }: { onOpenPalette: () => void }) {
                       <p className="truncate text-[11px] text-ink-lo">{user.email}</p>
                     </div>
                   )}
+                  <Link
+                    href="/extension"
+                    onClick={() => setProfileOpen(false)}
+                    className="block w-full px-3.5 py-2 text-left text-[13px] text-ink-mid hover:bg-[rgba(255,235,190,0.05)] hover:text-ink-hi"
+                  >
+                    Enviar vacante (atajo)
+                  </Link>
                   <button
                     onClick={() => {
                       setProfileOpen(false);
                       signOut();
                     }}
-                    className="block w-full px-3.5 py-2 text-left text-[13px] text-caution hover:bg-[rgba(255,235,190,0.05)]"
+                    className="block w-full border-t border-[rgba(255,235,190,0.07)] px-3.5 py-2 text-left text-[13px] text-caution hover:bg-[rgba(255,235,190,0.05)]"
                   >
                     Cerrar sesión
                   </button>

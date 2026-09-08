@@ -65,8 +65,10 @@ interface DeckValue extends Persisted {
   parseAndSetProfile: (fileOrText: File | string) => Promise<Profile>;
 }
 
+type Adaptation = ReturnType<typeof adaptCV> & { hallucinationFlags?: string[] };
+
 /** Call the adapt API, falling back to the local heuristic if it fails. */
-async function runAdapt(raw: string, profile: Profile): Promise<ReturnType<typeof adaptCV>> {
+async function runAdapt(raw: string, profile: Profile): Promise<Adaptation> {
   try {
     const res = await fetch("/api/adapt", {
       method: "POST",
@@ -76,7 +78,7 @@ async function runAdapt(raw: string, profile: Profile): Promise<ReturnType<typeo
     if (!res.ok) throw new Error(String(res.status));
     return await res.json();
   } catch {
-    return adaptCV(raw, profile);
+    return { ...adaptCV(raw, profile), hallucinationFlags: [] };
   }
 }
 
@@ -252,6 +254,9 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
                   tailoredExperiences: a.tailoredExperiences,
                   summaryLine: a.summaryLine,
                   message: a.message,
+                  matchPct: a.matchPct,
+                  atsTip: a.atsTip,
+                  hallucinationFlags: a.hallucinationFlags ?? [],
                 }
               : v,
           ),

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { guard } from "@/lib/api-guard";
 import { adaptCV, Profile } from "@/lib/atlas/mock";
 import { adaptWithDeepSeek, hasDeepSeek } from "@/lib/ai/deepseek";
+import { hallucinationFlags } from "@/lib/atlas/hallucination-check";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,21 +25,25 @@ export async function POST(request: Request) {
   const heuristic = adaptCV(raw, profile);
 
   if (!hasDeepSeek()) {
-    return NextResponse.json({ ...heuristic, _engine: "heuristic" });
+    return NextResponse.json({ ...heuristic, hallucinationFlags: [], _engine: "heuristic" });
   }
 
   try {
     const llm = await adaptWithDeepSeek(raw, profile);
     // Backfill anything the model left blank so the UI is never empty.
-    return NextResponse.json({
+    const merged = {
       ...heuristic,
       ...llm,
       summaryLine: llm.summaryLine || heuristic.summaryLine,
       message: llm.message || heuristic.message,
+    };
+    return NextResponse.json({
+      ...merged,
+      hallucinationFlags: hallucinationFlags(profile, merged),
       _engine: "deepseek",
     });
   } catch (err) {
     console.error("[adapt] deepseek failed, using heuristic:", err);
-    return NextResponse.json({ ...heuristic, _engine: "heuristic-fallback" });
+    return NextResponse.json({ ...heuristic, hallucinationFlags: [], _engine: "heuristic-fallback" });
   }
 }
