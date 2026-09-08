@@ -25,6 +25,13 @@ scraping, sin backend: solo evita el copiar/pegar.
 Para compartir: pasá la carpeta (o un `.zip`) y que repitan los pasos 2-4.
 Si cambiás `ATLAS_URL`, hay que recargar la extensión desde `chrome://extensions`.
 
+## Logo
+
+La extensión sí tiene logo (el mark de Atlas, en `icons/`, generado desde
+`apps/web/app/icon.svg`). Se ve en la barra de herramientas y en
+`chrome://extensions`. El bookmarklet de `/extension` **no** puede tener logo
+propio en Chrome — ahí se usa un emoji en el nombre.
+
 ## Límites conocidos
 
 - Los selectores por sitio se rompen si el portal cambia su HTML. Cuando eso

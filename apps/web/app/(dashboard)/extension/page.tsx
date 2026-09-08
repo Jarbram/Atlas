@@ -76,10 +76,15 @@ export default function ExtensionPage() {
             draggable
             className="inline-flex cursor-grab items-center gap-2 rounded-lg border border-brass/40 bg-brass/12 px-4 py-2.5 text-[14px] font-semibold text-brass-soft active:cursor-grabbing"
           >
-            <MousePointerClick className="h-4 w-4" /> Enviar a Atlas
+            <MousePointerClick className="h-4 w-4" /> 🧭 Enviar a Atlas
           </a>
           <span className="text-[12px] text-ink-lo">← arrastralo, no lo cliquees</span>
         </div>
+        <p className="mt-2 text-[12px] text-ink-lo">
+          En favoritos aparece con un ícono de globo genérico (un bookmarklet no tiene web
+          propia, así que Chrome no le pone logo). El emoji 🧭 en el nombre lo hace
+          reconocible; podés renombrarlo con clic derecho → Editar.
+        </p>
 
         <ol start={3} className="mt-4 space-y-3 text-[13.5px] leading-relaxed text-ink-mid">
           <li>
