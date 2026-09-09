@@ -5,19 +5,33 @@
  * matched CV selection + a recruiter message.
  */
 
-export type VacancyStatus = "adaptada" | "postulada" | "entrevista" | "descartada";
+export type VacancyStatus =
+  | "adaptada"
+  | "postulada"
+  | "entrevista"
+  | "respuesta"
+  | "descartada";
 
-export const STATUS_ORDER: VacancyStatus[] = ["adaptada", "postulada", "entrevista", "descartada"];
+// Pipeline order = board column order (left → right).
+export const STATUS_ORDER: VacancyStatus[] = [
+  "adaptada",
+  "postulada",
+  "entrevista",
+  "respuesta",
+  "descartada",
+];
 
 export const STATUS_LABEL: Record<VacancyStatus, string> = {
   adaptada: "CV adaptado",
   postulada: "Postulada",
   entrevista: "Entrevista",
+  respuesta: "En decisión",
   descartada: "Descartada",
 };
 
 /** Whether an application still counts as "in play". */
-export const isActive = (s: VacancyStatus) => s === "postulada" || s === "entrevista";
+export const isActive = (s: VacancyStatus) =>
+  s === "postulada" || s === "entrevista" || s === "respuesta";
 
 let idSeq = 0;
 export function newId(prefix = "id") {
@@ -35,6 +49,8 @@ export interface Vacancy {
   createdAt: string;
   status: VacancyStatus;
   sentAt?: string;
+  /** Free-text prep notes: quick updates, key dates, interview questions. */
+  notes?: string;
   message: string;
   summaryLine: string;
   experienceIds: string[];

@@ -57,11 +57,15 @@ links into a toggle. ⌘K opens the command palette (kept, warm-restyled).
   rail, active step ringed gold during the run) + a starfield `Motor de
   inferencia` card. `?v=<id>` → result view: editable title/company, a `CalceGauge`
   ring, matched/gaps card, 7/5 CV-paper + sticky message column.
-- **Historial** — "Historial de aplicaciones" + 3 `StatCard`s (Total adaptaciones
-  + `Sparkline`, Calce promedio + sky bar, Postulaciones activas + segment bars),
-  then a `Registro de postulaciones` card: search, filter chips, and a **table**
-  (Rol & empresa with letter badge · Fecha · `CalceGauge` · `StatusBadge` ·
-  Abrir/eliminar), footer count.
+- **Historial** — "Tablero de postulaciones" + the same 3 `StatCard`s (Total
+  adaptaciones + `Sparkline`, Calce promedio + sky bar, Postulaciones activas +
+  segment bars), then a **Kanban board** (`PipelineBoard`): one recessed lane per
+  `STATUS_ORDER` status (dot in the status hue + mono label + count pill).
+  Native HTML5 drag between lanes; a quiet `⇄` `<select>` on each card is the
+  touch/keyboard move path. Cards: letter badge · role · company · small
+  `CalceGauge` · `Notas` toggle (brass dot when filled) → inline autosaving
+  textarea for apuntes/fechas/preguntas · Abrir · eliminar. Search filters cards
+  across all lanes. Card re-mounts (`key=id:status`) so the drop replays `reveal`.
 - **Mi información** — full-width **dossier hero** (letter avatar w/ gold ring +
   glow, huge name, gold title, icon contact row, Exportar PDF / Editar perfil),
   then a 1.6fr/1fr grid of `Card`s: Resumen + Experiencia (circle-node timeline,
@@ -70,8 +74,9 @@ links into a toggle. ⌘K opens the command palette (kept, warm-restyled).
 
 ## Status model
 
-`adaptada → postulada → entrevista`, plus `descartada`. `isActive()` = postulada
-or entrevista. `calceScore()` = matched / (matched + gaps) tech, 0–100.
+`adaptada → postulada → entrevista → respuesta` ("En decisión"), plus
+`descartada`. `isActive()` = postulada, entrevista or respuesta. `calceScore()` =
+matched / (matched + gaps) tech, 0–100.
 
 ## Not built
 

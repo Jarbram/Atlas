@@ -5,6 +5,7 @@ const STATUS_TONE: Record<VacancyStatus, string> = {
   adaptada: "border-brass/35 bg-brass/10 text-brass-soft",
   postulada: "border-depth/40 bg-depth/12 text-depth",
   entrevista: "border-depth/50 bg-depth/15 text-[#9AD0E6]",
+  respuesta: "border-[#B98F32]/45 bg-[#B98F32]/12 text-[#D8B968]",
   descartada: "border-caution/40 bg-caution/12 text-caution",
 };
 
