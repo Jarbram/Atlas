@@ -2,36 +2,14 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-  ArrowRight,
-  Trash2,
-  Sparkles,
-  FileEdit,
-  BarChart3,
-  Send,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
-import { VacancyStatus, calceScore, isActive } from "@/lib/atlas/mock";
-import { useDeck, useToast } from "@/lib/atlas/store";
-import { StatusBadge, PageHeader, StatCard, CalceGauge, Sparkline } from "@/components/atlas/bits";
-
-const FILTERS: { id: "todas" | VacancyStatus; label: string }[] = [
-  { id: "todas", label: "Todas" },
-  { id: "adaptada", label: "Adaptadas" },
-  { id: "postulada", label: "Postuladas" },
-  { id: "entrevista", label: "Entrevista" },
-  { id: "descartada", label: "Descartadas" },
-];
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es", { day: "2-digit", month: "short", year: "numeric" });
-}
+import { ArrowRight, Sparkles, FileEdit, BarChart3, Send, Search } from "lucide-react";
+import { calceScore, isActive } from "@/lib/atlas/mock";
+import { useDeck } from "@/lib/atlas/store";
+import { PageHeader, StatCard, Sparkline } from "@/components/atlas/bits";
+import { PipelineBoard } from "@/components/atlas/PipelineBoard";
 
 export default function HistorialPage() {
-  const { vacancies, removeVacancy } = useDeck();
-  const toast = useToast();
-  const [filter, setFilter] = useState<"todas" | VacancyStatus>("todas");
+  const { vacancies } = useDeck();
   const [q, setQ] = useState("");
 
   const activas = vacancies.filter((v) => isActive(v.status)).length;
@@ -41,14 +19,12 @@ export default function HistorialPage() {
 
   const shown = useMemo(() => {
     const term = q.trim().toLowerCase();
+    if (!term) return vacancies;
     return vacancies.filter(
       (v) =>
-        (filter === "todas" || v.status === filter) &&
-        (!term ||
-          v.title.toLowerCase().includes(term) ||
-          v.company.toLowerCase().includes(term)),
+        v.title.toLowerCase().includes(term) || v.company.toLowerCase().includes(term),
     );
-  }, [vacancies, filter, q]);
+  }, [vacancies, q]);
 
   if (vacancies.length === 0) {
     return (
@@ -75,11 +51,10 @@ export default function HistorialPage() {
   return (
     <div className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
       <PageHeader
-        title="Historial de aplicaciones"
-        description="Revisa y gestiona tu historial de vacantes, adaptaciones de CV y nivel de calce para cada oportunidad laboral."
+        title="Tablero de postulaciones"
+        description="Arrastra cada vacante por las fases del proceso. Abre las notas de una tarjeta para apuntes, fechas clave y preguntas para la entrevista."
       />
 
-      {/* stat row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Total adaptaciones"
@@ -113,8 +88,7 @@ export default function HistorialPage() {
                 key={i}
                 className="h-1.5 flex-1 rounded-full"
                 style={{
-                  background:
-                    i < Math.min(4, activas) ? "#DB7C68" : "rgba(255,235,190,0.08)",
+                  background: i < Math.min(4, activas) ? "#DB7C68" : "rgba(255,235,190,0.08)",
                 }}
               />
             ))}
@@ -122,126 +96,22 @@ export default function HistorialPage() {
         </StatCard>
       </div>
 
-      {/* register */}
-      <div className="card mt-6 rounded-2xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(255,235,190,0.07)] p-5">
-          <h2 className="font-display text-[18px] font-semibold tracking-tight text-ink-hi">
-            Registro de postulaciones
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="well flex items-center gap-2 rounded-lg px-3 py-2">
-              <Search className="h-3.5 w-3.5 text-ink-lo" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar rol o empresa…"
-                className="w-40 bg-transparent text-[12px] text-ink-hi outline-none placeholder:text-ink-lo sm:w-56"
-              />
-            </div>
-            <button
-              onClick={() => setFilter("todas")}
-              className="well card-hover flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-medium text-ink-mid hover:text-ink-hi"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Limpiar
-            </button>
-          </div>
-        </div>
-
-        {/* filter chips */}
-        <div className="flex flex-wrap gap-1.5 px-5 pt-4">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`rounded-full px-3 py-1 text-[12px] font-medium transition-colors ${
-                filter === f.id
-                  ? "bg-brass/15 text-brass-soft"
-                  : "text-ink-lo hover:bg-[rgba(255,235,190,0.05)] hover:text-ink-mid"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* table */}
-        <div className="overflow-x-auto px-2 pb-2 pt-3">
-          <table className="w-full min-w-[720px] border-collapse">
-            <thead>
-              <tr className="text-left font-mono text-[10px] uppercase tracking-[0.12em] text-ink-lo">
-                <th className="px-3 py-2 font-medium">Rol &amp; empresa</th>
-                <th className="px-3 py-2 font-medium">Fecha</th>
-                <th className="px-3 py-2 font-medium">Calce</th>
-                <th className="px-3 py-2 font-medium">Estado</th>
-                <th className="px-3 py-2 text-right font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((v) => (
-                <tr
-                  key={v.id}
-                  className="group border-t border-[rgba(255,235,190,0.06)] transition-colors hover:bg-[rgba(255,235,190,0.03)]"
-                >
-                  <td className="px-3 py-3.5">
-                    <Link href={`/adaptar?v=${v.id}`} className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(255,235,190,0.1)] bg-chart-raised font-display text-[13px] font-semibold text-brass-soft">
-                        {v.company.trim().charAt(0).toUpperCase() || "·"}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[14px] font-medium text-ink-hi">
-                          {v.title}
-                        </span>
-                        <span className="block truncate text-[12px] text-ink-mid">{v.company}</span>
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="tabular whitespace-nowrap px-3 py-3.5 font-mono text-[12px] text-ink-mid">
-                    {fmtDate(v.createdAt)}
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <CalceGauge value={calceScore(v)} size={40} />
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <StatusBadge status={v.status} />
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link
-                        href={`/adaptar?v=${v.id}`}
-                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-ink-lo transition-colors hover:bg-[rgba(255,235,190,0.05)] hover:text-ink-hi"
-                      >
-                        Abrir
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
-                      </Link>
-                      <button
-                        onClick={() => {
-                          removeVacancy(v.id);
-                          toast("Eliminada");
-                        }}
-                        className="rounded-lg p-1.5 text-ink-lo/70 transition-colors hover:bg-[rgba(255,235,190,0.05)] hover:text-caution"
-                        aria-label="Eliminar"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {shown.length === 0 && (
-            <p className="px-4 py-10 text-center text-[12px] text-ink-lo">
-              Nada coincide con este filtro.
-            </p>
-          )}
-        </div>
-
-        <div className="border-t border-[rgba(255,235,190,0.07)] px-5 py-3.5">
-          <span className="tabular font-mono text-[11px] text-ink-lo">
-            Mostrando {shown.length} de {vacancies.length} resultados
-          </span>
+      <div className="mb-4 mt-6 flex items-center justify-between gap-3">
+        <h2 className="font-display text-[18px] font-semibold tracking-tight text-ink-hi">
+          Pipeline
+        </h2>
+        <div className="well flex items-center gap-2 rounded-lg px-3 py-2">
+          <Search className="h-3.5 w-3.5 text-ink-lo" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar rol o empresa…"
+            className="w-40 bg-transparent text-[12px] text-ink-hi outline-none placeholder:text-ink-lo sm:w-56"
+          />
         </div>
       </div>
+
+      <PipelineBoard vacancies={shown} />
     </div>
   );
 }
