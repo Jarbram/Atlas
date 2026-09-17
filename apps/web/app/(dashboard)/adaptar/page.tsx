@@ -474,6 +474,12 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
               {vacancy.atsTip}
             </p>
           )}
+          {vacancy.extraSuggestion && (
+            <p className="mt-2 border-t border-[rgba(255,235,190,0.08)] pt-2 text-[11px] leading-snug text-ink-mid">
+              <span className="font-mono text-ink-lo">Para la entrevista · </span>
+              {vacancy.extraSuggestion}
+            </p>
+          )}
         </div>
       </div>
 
