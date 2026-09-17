@@ -62,6 +62,8 @@ export interface Vacancy {
   matchPct?: number;
   /** La keyword de la vacante que más conviene sumar/resaltar. */
   atsTip?: string;
+  /** Proyecto o certificación real del perfil que conviene resaltar en la entrevista. */
+  extraSuggestion?: string;
   /** Términos del CV adaptado que no aparecen ni en tu perfil ni en la vacante — revisar antes de enviar. */
   hallucinationFlags?: string[];
 }
@@ -403,6 +405,7 @@ export function adaptCV(raw: string, p: Profile) {
     message: buildMessage(p, company, title, matched),
     matchPct: calceScore({ matched, gaps }),
     atsTip: gaps[0] ? `Suma o resalta "${gaps[0]}" si tienes experiencia real con eso.` : "",
+    extraSuggestion: "",
   };
 }
 

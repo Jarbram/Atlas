@@ -13,7 +13,25 @@ export const hasDeepSeek = () => client !== null;
 
 type Adaptation = ReturnType<typeof adaptCV>;
 
-const SYSTEM = `Eres un asistente de carrera. Recibes el TEXTO de una vacante y el PERFIL (JSON) de un candidato.
+const SYSTEM = `Actúas como un Experto en Reclutamiento Tecnológico y Especialista en Redacción de CVs con 15 años
+de experiencia en empresas Fortune 500. Tu objetivo es optimizar el perfil del candidato para que encaje
+al máximo con la vacante (JD) recibida, maximizando relevancia SIN inventar información: solo resaltas y
+reformulas lo que el candidato ya hizo.
+
+FASE 1 — ANÁLISIS (interno, antes de redactar):
+- Identifica en la vacante las 5 hard skills y 5 soft skills más críticas, y las keywords que un ATS usaría
+  para filtrar candidatos. Usa ese análisis para decidir qué destacar y con qué palabras, aunque el JSON de
+  salida no tenga un campo separado para listarlas.
+
+FASE 2 — OPTIMIZACIÓN DE CONTENIDO:
+- "summaryLine" es el gancho directo hacia la vacante: identidad profesional + 2-3 keywords del rol + impacto.
+- Cada bullet de "tailoredExperiences" sigue el método STAR (Situación/Tarea -> Acción -> Resultado) en una
+  sola frase: arranca con verbo de acción fuerte (nunca "encargado de", "ayudé", "apoyé"), nombra la
+  herramienta/tecnología y cierra con métrica o impacto cuantificable si el perfil lo trae.
+- Si el perfil trae logros de construcción ágil de MVPs o métricas de producto (retención, churn, LTV,
+  velocidad de iteración, etc.), resáltalos cuando la vacante lo valore.
+- NO reduzcas el contenido: expande y detalla los bullets originales, no los resumas ni los recortes.
+
 Devuelves SOLO un objeto JSON con esta forma exacta:
 {
   "company": string,            // empresa de la vacante
@@ -24,16 +42,18 @@ Devuelves SOLO un objeto JSON con esta forma exacta:
   "tailoredExperiences": [      // para CADA id de experienceIds, sus bullets reescritos
     {
       "id": string,             // el id de la experiencia del perfil
-      "bullets": string[]       // 3-5 bullets DETALLADOS en español: acción + herramientas + impacto/cifra,
-                                // orientados a esta vacante. Reescribe y expande los bullets originales del
-                                // perfil; NO inventes cifras, clientes, fechas ni logros que no estén ahí.
+      "bullets": string[]       // 3-5 bullets DETALLADOS en español (método STAR, ver Fase 2), orientados a
+                                // esta vacante. Reescribe y expande los bullets originales del perfil; NO
+                                // inventes cifras, clientes, fechas ni logros que no estén ahí.
     }
   ],
-  "summaryLine": string,        // UNA frase en español para añadir al resumen, a medida de esta vacante
+  "summaryLine": string,        // UNA frase en español para añadir al resumen, a medida de esta vacante (ver Fase 2)
   "message": string,            // mensaje breve al reclutador en español, primera persona, 110-160 palabras,
                                 // usando logros REALES del perfil. Sin inventar datos.
   "matchPct": number,           // entero 0-100: qué tan bien encaja el PERFIL (ya adaptado) con esta vacante
-  "atsTip": string              // máx 15 palabras: la keyword de la vacante que más conviene sumar o resaltar
+  "atsTip": string,             // máx 15 palabras: la keyword de la vacante que más conviene sumar o resaltar
+  "extraSuggestion": string     // máx 30 palabras en español: un proyecto o certificación del perfil (real,
+                                // ya presente ahí) que conviene resaltar en la entrevista para esta vacante
 }
 CÓMO ADAPTAR (filtros ATS):
 - Usa la terminología EXACTA de la vacante para describir lo que el candidato YA hizo. Mismo hecho, dicho
@@ -112,6 +132,7 @@ export async function adaptWithDeepSeek(raw: string, profile: Profile): Promise<
     message: String(parsed.message || "").trim(),
     matchPct: Math.max(0, Math.min(100, Math.round(Number(parsed.matchPct)) || 0)),
     atsTip: String(parsed.atsTip || "").trim().slice(0, 160),
+    extraSuggestion: String(parsed.extraSuggestion || "").trim().slice(0, 240),
   };
 }
 
