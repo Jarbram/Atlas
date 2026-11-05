@@ -23,7 +23,7 @@ import {
   FileEdit,
   Sparkles,
 } from "lucide-react";
-import { Profile, Vacancy, calceScore, isProfileEmpty, newId } from "@/lib/atlas/mock";
+import { Profile, Vacancy, calceScore, detectCvLang, isProfileEmpty, localizedProfile, newId } from "@/lib/atlas/mock";
 import { useDeck, useToast } from "@/lib/atlas/store";
 import { Eyebrow, StatusBadge, PageHeader, CalceGauge } from "@/components/atlas/bits";
 
@@ -34,6 +34,25 @@ const STEPS = [
   { icon: ListOrdered, tag: "Paso 04", title: "Priorización de impacto", desc: "Ordenamiento de competencias según relevancia para el puesto." },
   { icon: Mail, tag: "Paso 05", title: "Generación de mensaje", desc: "Creación de pitch adaptado y resumen ejecutivo final." },
 ];
+
+const CV_LABELS = {
+  es: {
+    summary: "Resumen profesional",
+    skills: "Competencias clave",
+    experience: "Experiencia",
+    educationCerts: "Educación y certificaciones",
+    languages: "Idiomas",
+    educationLangs: "Educación e idiomas",
+  },
+  en: {
+    summary: "Professional Summary",
+    skills: "Key Skills",
+    experience: "Experience",
+    educationCerts: "Education & Certifications",
+    languages: "Languages",
+    educationLangs: "Education & Languages",
+  },
+};
 
 function pickedExperiences(p: Profile, v: Vacancy) {
   const byId = new Map((p.experiences || []).map((e) => [e.id, e]));
@@ -50,26 +69,28 @@ function cvExperiences(p: Profile, v: Vacancy) {
   });
 }
 
-function cvPlainText(p: Profile, v: Vacancy) {
+function cvPlainText(profile: Profile, v: Vacancy) {
+  const p = localizedProfile(profile, v.cv);
+  const t = CV_LABELS[v.cv ? "en" : "es"];
   const exps = cvExperiences(p, v);
   return [
-    (p.name || "CANDIDATO").toUpperCase(),
+    (p.name || (v.cv ? "CANDIDATE" : "CANDIDATO")).toUpperCase(),
     [p.location, p.phone, p.email, ...p.links].filter(Boolean).join(" · "),
     "",
-    "RESUMEN PROFESIONAL",
+    t.summary.toUpperCase(),
     `${p.summary} ${v.summaryLine}`.trim(),
-    ...(v.matched.length ? ["", "COMPETENCIAS CLAVE", v.matched.join(" · ")] : []),
+    ...(v.matched.length ? ["", t.skills.toUpperCase(), v.matched.join(" · ")] : []),
     "",
-    "EXPERIENCIA",
+    t.experience.toUpperCase(),
     ...exps.flatMap((e) => [
       `${e.company} — ${e.role} (${e.period})`,
       ...e.bullets.map((b) => `• ${b}`),
       "",
     ]),
-    "EDUCACIÓN Y CERTIFICACIONES",
+    t.educationCerts.toUpperCase(),
     ...(p.education || []).map((e) => `${e.title} — ${e.org} (${e.period})`),
     "",
-    "IDIOMAS",
+    t.languages.toUpperCase(),
     ...(p.languages || []).map((l) => `${l.name}: ${l.level}`),
   ].join("\n");
 }
@@ -365,7 +386,10 @@ export default function AdaptarPage() {
 function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
   const { updateVacancy, markSent, setProfile, readaptVacancy } = useDeck();
   const toast = useToast();
-  const exps = useMemo(() => cvExperiences(profile, vacancy), [profile, vacancy]);
+  const cvProfile = useMemo(() => localizedProfile(profile, vacancy.cv), [profile, vacancy.cv]);
+  const exps = useMemo(() => cvExperiences(cvProfile, vacancy), [cvProfile, vacancy]);
+  const cvLang = vacancy.cv ? "en" : "es";
+  const t = CV_LABELS[cvLang];
   const calce = useMemo(
     () => (typeof vacancy.matchPct === "number" ? vacancy.matchPct : calceScore(vacancy)),
     [vacancy],
@@ -387,15 +411,27 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
     const body = cvPlainText(profile, vacancy);
     try {
       const { downloadCvPdf } = await import("@/lib/atlas/cv-pdf");
-      await downloadCvPdf(name, body);
+      await downloadCvPdf(name, body, cvLang);
       toast("CV descargado en PDF", "ok");
     } catch (err) {
       console.error("[cv-pdf] @react-pdf failed, falling back to print:", err);
       const { printCvPdf } = await import("@/lib/atlas/cv-print");
-      printCvPdf(name, body);
+      printCvPdf(name, body, cvLang);
       toast("Abriendo diálogo — elige 'Guardar como PDF'");
     } finally {
       setPdfBusy(false);
+    }
+  };
+
+  const regenerateInEnglish = async () => {
+    if (readapting) return;
+    setReadapting(true);
+    try {
+      const a = await readaptVacancy(vacancy.id);
+      if (a?.cv) toast("CV generado en inglés", "ok");
+      else toast("No se pudo generar en inglés. Intenta de nuevo");
+    } finally {
+      setReadapting(false);
     }
   };
 
@@ -482,6 +518,23 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
           )}
         </div>
       </div>
+
+      {!vacancy.cv && detectCvLang(vacancy.raw) === "en" && (
+        <div className="reveal-2 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-caution/30 bg-caution/10 p-4">
+          <p className="flex items-center gap-1.5 text-[12px] text-ink-mid">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-caution" />
+            La vacante está en inglés, pero este CV quedó en español.
+          </p>
+          <button
+            onClick={regenerateInEnglish}
+            disabled={readapting}
+            className="flex items-center gap-1.5 rounded-full bg-brass px-3 py-1.5 text-[12px] font-semibold text-[#1a1305] hover:bg-brass-soft disabled:opacity-60"
+          >
+            {readapting && <RefreshCw className="h-3 w-3 animate-spin" />}
+            {readapting ? "Generando…" : "Generar en inglés"}
+          </button>
+        </div>
+      )}
 
       {vacancy.hallucinationFlags && vacancy.hallucinationFlags.length > 0 && (
         <div className="reveal-2 mb-6 rounded-2xl border border-caution/30 bg-caution/10 p-4">
@@ -624,30 +677,33 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
             </button>
           </div>
           <div
+            lang={cvLang}
             className={`space-y-4 rounded-lg bg-[#FBFAF6] p-6 font-serif text-black shadow-[0_2px_10px_rgba(0,0,0,0.4),0_36px_70px_-28px_rgba(0,0,0,0.85)] ring-1 ring-black/5 transition-opacity sm:p-8 ${
               readapting ? "opacity-50" : ""
             }`}
           >
             <div className="border-b border-black/80 pb-3 text-center">
-              <h1 className="text-xl font-bold uppercase tracking-wide">{profile.name || "CANDIDATO"}</h1>
+              <h1 className="text-xl font-bold uppercase tracking-wide">
+                {cvProfile.name || (vacancy.cv ? "CANDIDATE" : "CANDIDATO")}
+              </h1>
               <p className="mt-1 font-sans text-[11px] text-gray-700">
-                {[profile.location, profile.phone, profile.email, ...profile.links]
+                {[cvProfile.location, cvProfile.phone, cvProfile.email, ...cvProfile.links]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
             </div>
             <div>
               <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
-                Resumen profesional
+                {t.summary}
               </h2>
               <p className="mt-1 text-[12px] leading-relaxed text-gray-800">
-                {profile.summary} <em>{vacancy.summaryLine}</em>
+                {cvProfile.summary} <em>{vacancy.summaryLine}</em>
               </p>
             </div>
             {vacancy.matched.length > 0 && (
               <div>
                 <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
-                  Competencias clave
+                  {t.skills}
                 </h2>
                 <p className="mt-1 text-[12px] leading-relaxed text-gray-800">
                   {vacancy.matched.join(" · ")}
@@ -656,7 +712,7 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
             )}
             <div>
               <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
-                Experiencia
+                {t.experience}
               </h2>
               <div className="mt-2 space-y-3">
                 {exps.map((e) => (
@@ -678,15 +734,15 @@ function Result({ vacancy, profile }: { vacancy: Vacancy; profile: Profile }) {
             </div>
             <div>
               <h2 className="border-b border-black/80 pb-0.5 font-sans text-[11px] font-bold uppercase tracking-wider">
-                Educación e idiomas
+                {t.educationLangs}
               </h2>
               <ul className="mt-2 space-y-0.5 text-[12px] text-gray-800">
-                {(profile.education || []).map((e) => (
+                {(cvProfile.education || []).map((e) => (
                   <li key={e.id}>
                     {e.title} — {e.org} ({e.period})
                   </li>
                 ))}
-                <li>{(profile.languages || []).map((l) => `${l.name}: ${l.level}`).join("  ·  ")}</li>
+                <li>{(cvProfile.languages || []).map((l) => `${l.name}: ${l.level}`).join("  ·  ")}</li>
               </ul>
             </div>
           </div>

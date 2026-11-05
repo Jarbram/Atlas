@@ -3,7 +3,7 @@
  * print dialog (destination defaults to "Guardar como PDF"). No dependencies.
  * Used only if @react-pdf/renderer throws in the browser.
  */
-export function printCvPdf(filename: string, text: string) {
+export function printCvPdf(filename: string, text: string, lang = "es") {
   const esc = (str: string) =>
     str.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
 
@@ -41,7 +41,7 @@ export function printCvPdf(filename: string, text: string) {
     parts.push(`<p>${esc(t)}</p>`);
   }
 
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(filename)}</title>
+  const html = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(filename)}</title>
 <style>
   @page { size: A4; margin: 18mm; }
   html, body { margin: 0; }

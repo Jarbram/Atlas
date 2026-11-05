@@ -56,7 +56,7 @@ interface DeckValue extends Persisted {
   get: (id: string | null | undefined) => Vacancy | undefined;
   adaptFromRaw: (raw: string) => Promise<Vacancy>;
   /** Re-run the AI adaptation for an existing vacancy (e.g. after adding a gap skill). */
-  readaptVacancy: (id: string, profileOverride?: Profile) => Promise<void>;
+  readaptVacancy: (id: string, profileOverride?: Profile) => Promise<Adaptation | undefined>;
   updateVacancy: (id: string, patch: Partial<Vacancy>) => void;
   markSent: (id: string) => void;
   removeVacancy: (id: string) => void;
@@ -257,10 +257,12 @@ export function DeckProvider({ children }: { children: React.ReactNode }) {
                   matchPct: a.matchPct,
                   atsTip: a.atsTip,
                   hallucinationFlags: a.hallucinationFlags ?? [],
+                  cv: a.cv,
                 }
               : v,
           ),
         }));
+        return a;
       },
       markSent: (id: string) =>
         updateVacancy(id, { status: "postulada", sentAt: new Date().toISOString() }),

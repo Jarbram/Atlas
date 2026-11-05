@@ -66,6 +66,77 @@ export interface Vacancy {
   extraSuggestion?: string;
   /** Términos del CV adaptado que no aparecen ni en tu perfil ni en la vacante — revisar antes de enviar. */
   hallucinationFlags?: string[];
+  /** Capa en inglés del perfil. Presente = el CV de esta vacante se muestra en inglés. */
+  cv?: CvTranslation;
+}
+
+/** Profile fields rendered on the CV, translated. Entries pair with the profile by id. */
+export interface CvTranslation {
+  summary?: string;
+  location?: string;
+  experiences: { id: string; role?: string; period?: string }[];
+  education: { id: string; title?: string; period?: string }[];
+  languages: { id: string; name?: string; level?: string }[];
+}
+
+export type CvLang = "es" | "en";
+
+const EN_WORDS = new Set(
+  "the and with you your will our for are this that from have has to of in on as we is be an or at by".split(" "),
+);
+const ES_WORDS = new Set(
+  "el la los las de del y con para en que una un por se su sus es como al lo más nos tu".split(" "),
+);
+
+/** > 0 reads as English, < 0 as Spanish, 0 has no signal. */
+function langScore(text: string) {
+  let score = 0;
+  for (const w of text.toLowerCase().match(/\p{L}+/gu) ?? []) {
+    if (EN_WORDS.has(w)) score++;
+    else if (ES_WORDS.has(w)) score--;
+  }
+  return score;
+}
+
+/**
+ * Language the CV must be written in, from the vacancy text.
+ * ponytail: stopword count, only en/es; anything else stays Spanish. Add a
+ * language here and a CV_LABELS entry if another market shows up.
+ */
+export const detectCvLang = (text: string): CvLang => (langScore(text) > 0 ? "en" : "es");
+
+/** Whether an AI adaptation is a complete English CV, so nothing Spanish leaks onto the page. */
+export function isCvEnglish(
+  a: Pick<Vacancy, "cv" | "summaryLine" | "message" | "experienceIds" | "tailoredExperiences">,
+  p: Profile,
+) {
+  const { cv } = a;
+  if (!cv || !a.summaryLine || !a.message || (p.summary && !cv.summary)) return false;
+  const complete =
+    a.experienceIds.every(
+      (id) =>
+        a.tailoredExperiences.some((t) => t.id === id) &&
+        cv.experiences.some((e) => e.id === id && e.role),
+    ) &&
+    p.education.every((e) => cv.education.some((x) => x.id === e.id && x.title)) &&
+    p.languages.every((l) => cv.languages.some((x) => x.id === l.id && x.name));
+  const bullets = a.tailoredExperiences.flatMap((t) => t.bullets).join(" ");
+  return complete && [a.summaryLine, cv.summary ?? "", a.message, bullets].every((t) => langScore(t) >= 0);
+}
+
+/** The profile as the CV must show it: translated when the vacancy has an English layer. */
+export function localizedProfile(p: Profile, cv?: CvTranslation): Profile {
+  if (!cv) return p;
+  const merge = <T extends { id: string }>(base: T[], over: { id: string }[]) =>
+    base.map((b) => ({ ...b, ...over.find((o) => o.id === b.id) }));
+  return {
+    ...p,
+    summary: cv.summary || p.summary,
+    location: cv.location || p.location,
+    experiences: merge(p.experiences, cv.experiences),
+    education: merge(p.education, cv.education),
+    languages: merge(p.languages, cv.languages),
+  };
 }
 
 // ─── Profile (Mi información) — editable ────────────────────────────────────
@@ -406,6 +477,7 @@ export function adaptCV(raw: string, p: Profile) {
     matchPct: calceScore({ matched, gaps }),
     atsTip: gaps[0] ? `Suma o resalta "${gaps[0]}" si tienes experiencia real con eso.` : "",
     extraSuggestion: "",
+    cv: undefined as CvTranslation | undefined,
   };
 }
 

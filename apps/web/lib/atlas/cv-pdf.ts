@@ -8,7 +8,7 @@ import React from "react";
  * Typography mirrors the on-screen CV card: serif body (Times), sans-serif
  * contact line and section headers (Helvetica), bold role lines, italic dates.
  */
-export async function downloadCvPdf(filename: string, text: string) {
+export async function downloadCvPdf(filename: string, text: string, lang = "es") {
   const { pdf, Document, Page, Text, StyleSheet } = await import("@react-pdf/renderer");
 
   const s = StyleSheet.create({
@@ -100,7 +100,7 @@ export async function downloadCvPdf(filename: string, text: string) {
 
   const doc = React.createElement(
     Document,
-    null,
+    { language: lang },
     React.createElement(Page, { size: "A4", style: s.page }, ...children),
   );
 
