@@ -48,4 +48,21 @@ const f3 = hallucinationFlags(profile, {
 });
 assert.deepEqual(f3, [], `IGNORE-listed words must not be flagged, got ${JSON.stringify(f3)}`);
 
+// English CV over a Spanish profile: opening verbs and translated fields are fine,
+// invented tech is still flagged, including inside the translated summary.
+const cv = {
+  summary: "Analyst experienced in Python and Terraform.",
+  experiences: [{ id: "e1", role: "Data Analyst" }],
+  education: [],
+  languages: [{ id: "l1", name: "Spanish", level: "Native" }],
+};
+const f4 = hallucinationFlags(profile, {
+  ...base,
+  cv,
+  summaryLine: "Native Spanish speaker with Python and Excel.",
+  message: "Dear Hiring Manager,\nI am applying for the Data Analyst role at Globex. I also use Snowflake.",
+  tailoredExperiences: [{ id: "e1", bullets: ["Automated reports with Python.", "Delivered dashboards for Acme"] }],
+});
+assert.deepEqual(f4, ["Terraform", "Snowflake"]);
+
 console.log("hallucination-check: OK");
